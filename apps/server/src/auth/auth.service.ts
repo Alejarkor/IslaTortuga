@@ -3,7 +3,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -131,16 +131,18 @@ export class AuthService {
   }
 
   private buildAuthResponse(user: AuthUser) {
+    const signOptions: JwtSignOptions = {
+      secret: this.getJwtSecret(),
+      expiresIn: this.getJwtExpiresIn(),
+    };
+
     return {
       accessToken: this.jwtService.sign(
         {
           sub: user.id,
           email: user.email,
         },
-        {
-          secret: this.getJwtSecret(),
-          expiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
-        },
+        signOptions,
       ),
       user: this.toPublicUser(user),
     };
@@ -162,5 +164,9 @@ export class AuthService {
 
   private getJwtSecret() {
     return process.env.JWT_SECRET ?? 'dev_secret_change_me';
+  }
+
+  private getJwtExpiresIn(): JwtSignOptions['expiresIn'] {
+    return (process.env.JWT_EXPIRES_IN ?? '7d') as JwtSignOptions['expiresIn'];
   }
 }
