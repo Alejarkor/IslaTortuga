@@ -1,0 +1,17 @@
+{
+  "name": "isla-tortuga",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Juego web multijugador 2D top-down pixel art de misterio, cooperación y sabotaje social.",
+  "scripts": {
+    "dev": "pnpm --parallel dev",
+    "dev:client": "pnpm --filter client dev",
+    "dev:server": "pnpm --filter server start:dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
