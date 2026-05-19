@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { loginUser, registerUser, type UserDto } from './api';
 import { clearAuth, getStoredToken, loadCurrentUser, saveAuth } from './auth';
+import { PhaserGame } from './phaser/PhaserGame';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -133,7 +134,7 @@ function PortalPage() {
       <section className="card portal-card">
         <p className="eyebrow">Portal</p>
         <h1>Bienvenido, {user.profile?.nickname ?? user.email}</h1>
-        <p className="muted">Sesión validada contra la API. El siguiente paso será entrar al mapa Phaser.</p>
+        <p className="muted">Sesión validada contra la API. Ya puedes entrar al mapa Phaser.</p>
         <div className="actions">
           <button onClick={() => navigate('/game')}>Entrar al mundo de prueba</button>
           <button className="secondary" onClick={handleLogout}>Cerrar sesión</button>
@@ -144,16 +145,7 @@ function PortalPage() {
 }
 
 function GamePage() {
-  return (
-    <main className="center-page">
-      <section className="card">
-        <p className="eyebrow">Juego</p>
-        <h1>Mundo de prueba</h1>
-        <p className="muted">Aquí montaremos Phaser en el siguiente paso.</p>
-        <Link to="/portal">Volver al portal</Link>
-      </section>
-    </main>
-  );
+  return <PhaserGame />;
 }
 
 export function App() {
