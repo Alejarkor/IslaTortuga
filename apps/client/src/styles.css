@@ -8,10 +8,16 @@
   box-sizing: border-box;
 }
 
-body {
-  margin: 0;
+html,
+body,
+#root {
+  width: 100%;
   min-width: 320px;
   min-height: 100vh;
+  margin: 0;
+}
+
+body {
   background:
     radial-gradient(circle at top left, rgba(108, 86, 47, 0.3), transparent 32rem),
     linear-gradient(135deg, #10130f 0%, #172016 55%, #0c0d0a 100%);
@@ -138,4 +144,15 @@ input:focus {
   gap: 0.75rem;
   flex-wrap: wrap;
   margin-top: 1.5rem;
+}
+
+.phaser-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #11160f;
+}
+
+.phaser-container canvas {
+  display: block;
 }
