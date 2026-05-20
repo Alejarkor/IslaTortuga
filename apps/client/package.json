@@ -1,5 +1,5 @@
 {
-  "name": "client",
+  "name": "web-client",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -11,12 +11,12 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "typescript": "latest",
+    "phaser": "latest",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "latest",
-    "phaser": "latest"
+    "typescript": "latest",
+    "vite": "latest"
   },
   "devDependencies": {
     "@types/react": "latest",

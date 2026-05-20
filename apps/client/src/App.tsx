@@ -1,8 +1,13 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
-import { loginUser, registerUser, type UserDto } from './api';
-import { clearAuth, getStoredToken, loadCurrentUser, saveAuth } from './auth';
-import { PhaserGame } from './phaser/PhaserGame';
+import { loginUser, registerUser, type UserDto } from './shared/http/apiClient';
+import {
+  clearAuth,
+  getStoredToken,
+  loadCurrentUser,
+  saveAuth,
+} from './features/auth/authSession';
+import { GameBootstrapPage } from './features/game-session/GameBootstrapPage';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -145,7 +150,7 @@ function PortalPage() {
 }
 
 function GamePage() {
-  return <PhaserGame />;
+  return <GameBootstrapPage />;
 }
 
 export function App() {

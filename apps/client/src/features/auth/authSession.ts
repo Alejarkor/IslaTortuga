@@ -1,4 +1,4 @@
-import { getMe, type AuthResponse, type UserDto } from './api';
+import { getMe, type AuthResponse, type UserDto } from '../../shared/http/apiClient';
 
 const TOKEN_KEY = 'isla_tortuga_access_token';
 

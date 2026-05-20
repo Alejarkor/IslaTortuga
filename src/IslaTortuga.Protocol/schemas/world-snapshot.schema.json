@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://islatortuga.local/protocol/world-snapshot.schema.json",
+  "title": "WorldSnapshotPayload",
+  "type": "object",
+  "required": ["serverTick", "roomId", "entities"],
+  "properties": {
+    "serverTick": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "roomId": {
+      "type": "string"
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["entityId", "entityType", "x", "y", "facing"],
+        "properties": {
+          "entityId": {
+            "type": "string"
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "facing": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": ["string", "null"]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

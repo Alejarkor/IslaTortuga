@@ -5,9 +5,13 @@
   "description": "Juego web multijugador 2D top-down pixel art de misterio, cooperación y sabotaje social.",
   "scripts": {
     "dev": "pnpm --parallel dev",
-    "dev:client": "pnpm --filter client dev",
-    "dev:server": "pnpm --filter server start:dev",
+    "dev:client": "pnpm --filter web-client dev",
+    "dev:api": "pnpm --filter api-server start:dev",
+    "dev:server": "pnpm --filter api-server start:dev",
+    "dev:game-server": "dotnet run --project ./src/IslaTortuga.Server/IslaTortuga.Server.csproj",
     "build": "pnpm -r build",
+    "build:api": "pnpm --filter api-server build",
+    "build:game-server": "dotnet build ./src/IslaTortuga.Server/IslaTortuga.Server.csproj",
     "lint": "pnpm -r lint"
   },
   "engines": {

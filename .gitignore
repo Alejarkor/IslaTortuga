@@ -8,6 +8,8 @@ build/
 .next/
 out/
 coverage/
+bin/
+obj/
 
 # Env files
 .env
@@ -30,6 +32,17 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.json
 .idea/
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+*.ncrunch*
+*.localhistory/
 
 # TypeScript
 *.tsbuildinfo

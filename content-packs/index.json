@@ -1,0 +1,11 @@
+{
+  "defaultContentPackId": "islatortuga-v001",
+  "packs": [
+    {
+      "contentPackId": "islatortuga-v001",
+      "version": "v001",
+      "mapId": "island_01",
+      "manifestUrl": "/content/v001/manifest.json"
+    }
+  ]
+}

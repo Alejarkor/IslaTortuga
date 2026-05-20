@@ -1,0 +1,40 @@
+{
+  "maps": {
+    "island_01": {
+      "mapFileId": "map.island_01",
+      "tilesets": [
+        {
+          "tilesetName": "TX Plant",
+          "textureKey": "tx-plant",
+          "imageFileId": "tileset.plant"
+        },
+        {
+          "tilesetName": "TX Props",
+          "textureKey": "tx-props",
+          "imageFileId": "tileset.props"
+        },
+        {
+          "tilesetName": "TX Tileset Grass",
+          "textureKey": "tx-tileset-grass",
+          "imageFileId": "tileset.grass"
+        }
+      ]
+    }
+  },
+  "players": {
+    "default": {
+      "textureKey": "player",
+      "imageFileId": "spritesheet.player",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "animations": {
+        "idleDown": "player-idle-down",
+        "idleUp": "player-idle-up",
+        "idleSide": "player-idle-side",
+        "walkDown": "player-walk-down",
+        "walkUp": "player-walk-up",
+        "walkSide": "player-walk-side"
+      }
+    }
+  }
+}

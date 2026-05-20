@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://islatortuga.local/protocol/network-envelope.schema.json",
+  "title": "NetworkEnvelope",
+  "type": "object",
+  "required": ["op", "payload"],
+  "properties": {
+    "op": {
+      "type": "string"
+    },
+    "requestId": {
+      "type": ["string", "null"]
+    },
+    "sentAt": {
+      "type": ["integer", "null"]
+    },
+    "payload": {}
+  },
+  "additionalProperties": false
+}

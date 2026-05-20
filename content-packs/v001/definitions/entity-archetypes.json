@@ -1,0 +1,6 @@
+{
+  "player.default": {
+    "visualId": "player.default",
+    "networkType": "player"
+  }
+}

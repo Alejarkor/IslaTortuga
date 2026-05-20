@@ -1,0 +1,18 @@
+{
+  "op": "world.snapshot",
+  "sentAt": 1747777200100,
+  "payload": {
+    "serverTick": 42,
+    "roomId": "room.default",
+    "entities": [
+      {
+        "entityId": "player_7e1c36",
+        "entityType": "player",
+        "x": 192.0,
+        "y": 288.0,
+        "facing": "down",
+        "displayName": "Alejandro"
+      }
+    ]
+  }
+}

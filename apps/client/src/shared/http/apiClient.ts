@@ -1,4 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+function getDefaultApiBaseUrl() {
+  if (typeof window === 'undefined') {
+    return 'http://localhost:3000';
+  }
+
+  return '/api';
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? getDefaultApiBaseUrl();
 
 export type UserDto = {
   id: string;
@@ -15,7 +23,18 @@ export type AuthResponse = {
   user: UserDto;
 };
 
-async function request<TResponse>(
+export type StartGameResponse = {
+  roomId: string;
+  gameUrl: string;
+  gameTicket: string;
+  contentPackId: string;
+  contentVersion: string;
+  mapId: string;
+  manifestUrl: string;
+  webSocketUrl: string;
+};
+
+export async function request<TResponse>(
   path: string,
   options: RequestInit = {},
 ): Promise<TResponse> {
@@ -58,6 +77,15 @@ export function loginUser(input: { email: string; password: string }) {
 export function getMe(token: string) {
   return request<UserDto>('/auth/me', {
     method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export function startDevGame(token: string) {
+  return request<StartGameResponse>('/dev/start-game', {
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
     },
