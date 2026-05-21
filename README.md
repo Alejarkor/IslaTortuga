@@ -54,3 +54,7 @@ pnpm run dev:game-server
 pnpm run build:api
 pnpm run build:game-server
 ```
+
+## Entorno
+
+La referencia unica de variables de entorno esta en [docs/ENTORNO.md](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/docs/ENTORNO.md).

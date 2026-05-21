@@ -9,7 +9,7 @@ using IslaTortuga.Server.Sessions;
 using IslaTortuga.Server.World.Tiled;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://0.0.0.0:5055");
+builder.WebHost.UseUrls($"http://0.0.0.0:{ResolveGameServerPort()}");
 
 builder.Services.AddRouting();
 
@@ -29,7 +29,7 @@ builder.Services.AddSingleton<SnapshotBuilder>();
 builder.Services.AddHostedService<GameTickService>();
 
 var app = builder.Build();
-var contentRootPath = ResolveContentRoot(app.Environment.ContentRootPath);
+var contentRootPath = ContentPathResolver.ResolveContentRoot(app.Environment.ContentRootPath);
 
 app.UseWebSockets(new WebSocketOptions
 {
@@ -61,20 +61,8 @@ app.Map("/ws/game", (HttpContext context, WebSocketGateway gateway, Cancellation
 
 await app.RunAsync();
 
-static string ResolveContentRoot(string contentRootPath)
+static int ResolveGameServerPort()
 {
-    var current = new DirectoryInfo(contentRootPath);
-
-    while (current is not null)
-    {
-        var candidate = Path.Combine(current.FullName, "content-packs");
-        if (Directory.Exists(candidate))
-        {
-            return candidate;
-        }
-
-        current = current.Parent;
-    }
-
-    return Path.Combine(contentRootPath, "content-packs");
+    var rawValue = Environment.GetEnvironmentVariable("GAME_SERVER_PORT");
+    return int.TryParse(rawValue, out var port) ? port : 5055;
 }

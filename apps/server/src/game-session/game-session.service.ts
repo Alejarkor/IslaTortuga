@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { createHmac, randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveContentIndexPath } from './content-paths';
 
 type ContentPackIndex = {
   defaultContentPackId: string;
@@ -61,7 +61,7 @@ export class GameSessionService {
   }
 
   private loadContentIndex(): ContentPackIndex {
-    const indexPath = resolve(process.cwd(), 'content-packs', 'index.json');
+    const indexPath = resolveContentIndexPath();
     const fileContents = readFileSync(indexPath, 'utf8');
     return JSON.parse(fileContents) as ContentPackIndex;
   }
