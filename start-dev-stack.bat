@@ -56,6 +56,47 @@ if errorlevel 1 (
   exit /b 1
 )
 
+:: Comprobar si Docker Desktop esta corriendo
+docker info >nul 2>nul
+if errorlevel 1 (
+  echo [INFO] Docker Desktop no esta en ejecucion. Arrancando...
+
+  set "DOCKER_EXE="
+  if exist "C:\Program Files\Docker\Docker\Docker Desktop.exe" (
+    set "DOCKER_EXE=C:\Program Files\Docker\Docker\Docker Desktop.exe"
+  ) else if exist "%LOCALAPPDATA%\Docker\Docker Desktop.exe" (
+    set "DOCKER_EXE=%LOCALAPPDATA%\Docker\Docker Desktop.exe"
+  )
+
+  if not defined DOCKER_EXE (
+    echo [ERROR] No se ha encontrado Docker Desktop.exe. Arrancalo manualmente y vuelve a intentarlo.
+    echo.
+    pause
+    exit /b 1
+  )
+
+  start "" "%DOCKER_EXE%"
+
+  echo [INFO] Esperando a que Docker Desktop este listo (puede tardar hasta 60s)...
+  set /a TRIES=0
+  :wait_docker
+    timeout /t 3 /nobreak >nul
+    docker info >nul 2>nul
+    if not errorlevel 1 goto docker_ready
+    set /a TRIES+=1
+    if %TRIES% GEQ 20 (
+      echo [ERROR] Docker Desktop no ha arrancado a tiempo. Intentalo de nuevo cuando este listo.
+      echo.
+      pause
+      exit /b 1
+    )
+    echo   ... sigo esperando (%TRIES%/20^)
+    goto wait_docker
+  :docker_ready
+  echo [OK] Docker Desktop listo.
+  echo.
+)
+
 echo [1/4] Levantando PostgreSQL con docker compose...
 docker compose up -d postgres
 if errorlevel 1 (

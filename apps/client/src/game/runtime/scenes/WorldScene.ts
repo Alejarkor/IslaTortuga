@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { getCurrentGameRuntime } from '../../bootstrap/gameRuntimeRegistry';
+import { PayloadBuilder } from '../payloadBuilder';
 import {
   GameNetworkClient,
   type EntityStatePayload,
@@ -165,10 +166,7 @@ export class WorldScene extends Phaser.Scene {
 
     const inputSignature = `${velocityX}:${velocityY}`;
     if (inputSignature !== this.lastSentInput) {
-      this.networkClient.sendPlayerInput({
-        moveX: velocityX,
-        moveY: velocityY,
-      });
+      this.networkClient.sendPlayerInput(PayloadBuilder.playerInput(velocityX, velocityY));
       this.lastSentInput = inputSignature;
     }
 
@@ -295,7 +293,7 @@ export class WorldScene extends Phaser.Scene {
     this.networkClient
       .waitUntilOpen()
       .then(() => {
-        this.networkClient?.sendJoin({ gameTicket });
+        this.networkClient?.sendJoin(PayloadBuilder.joinGame(gameTicket));
       })
       .catch((error) => {
         this.updateInfoText(error instanceof Error ? error.message : 'No se pudo abrir el game socket.');

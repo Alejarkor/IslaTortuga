@@ -46,13 +46,13 @@ public sealed class MessageDispatcher
                 break;
 
             case ProtocolTypes.Ping:
-                await connection.SendAsync(ProtocolTypes.Pong, new { }, envelope.RequestId, cancellationToken);
+                await connection.SendAsync(ProtocolTypes.Pong, PayloadBuilder.Pong(), envelope.RequestId, cancellationToken);
                 break;
 
             default:
                 await connection.SendAsync(
                     ProtocolTypes.Error,
-                    new ErrorPayload("unknown_op", $"Unsupported operation '{envelope.Op}'."),
+                    PayloadBuilder.Error("unknown_op", $"Unsupported operation '{envelope.Op}'."),
                     envelope.RequestId,
                     cancellationToken);
                 break;
@@ -75,7 +75,7 @@ public sealed class MessageDispatcher
         {
             await connection.SendAsync(
                 ProtocolTypes.AuthRejected,
-                new ErrorPayload(errorCode, "The game ticket is invalid or expired.", true),
+                PayloadBuilder.AuthRejected(errorCode, "The game ticket is invalid or expired."),
                 envelope.RequestId,
                 cancellationToken);
             return;
@@ -88,12 +88,7 @@ public sealed class MessageDispatcher
 
         await connection.SendAsync(
             ProtocolTypes.AuthAccepted,
-            new AuthAcceptedPayload(
-                session.SessionId,
-                session.UserId,
-                session.DisplayName,
-                roomPlayer.Room.RoomId,
-                roomPlayer.PlayerEntity.EntityId),
+            PayloadBuilder.AuthAccepted(session, roomPlayer.Room.RoomId, roomPlayer.PlayerEntity.EntityId),
             envelope.RequestId,
             cancellationToken);
 
@@ -119,7 +114,7 @@ public sealed class MessageDispatcher
         {
             await connection.SendAsync(
                 ProtocolTypes.AuthRejected,
-                new ErrorPayload(errorCode, "The reconnect ticket is invalid or expired.", true),
+                PayloadBuilder.AuthRejected(errorCode, "The reconnect ticket is invalid or expired."),
                 envelope.RequestId,
                 cancellationToken);
             return;
@@ -132,12 +127,7 @@ public sealed class MessageDispatcher
 
         await connection.SendAsync(
             ProtocolTypes.AuthAccepted,
-            new AuthAcceptedPayload(
-                session.SessionId,
-                session.UserId,
-                session.DisplayName,
-                roomPlayer.Room.RoomId,
-                roomPlayer.PlayerEntity.EntityId),
+            PayloadBuilder.AuthAccepted(session, roomPlayer.Room.RoomId, roomPlayer.PlayerEntity.EntityId),
             envelope.RequestId,
             cancellationToken);
 
@@ -156,7 +146,7 @@ public sealed class MessageDispatcher
         {
             await connection.SendAsync(
                 ProtocolTypes.Error,
-                new ErrorPayload("not_authenticated", "Join the game before sending input."),
+                PayloadBuilder.Error("not_authenticated", "Join the game before sending input."),
                 envelope.RequestId,
                 cancellationToken);
             return;
@@ -190,7 +180,7 @@ public sealed class MessageDispatcher
     {
         return connection.SendAsync(
             ProtocolTypes.Error,
-            new ErrorPayload("invalid_payload", $"Invalid payload for operation '{envelope.Op}'."),
+            PayloadBuilder.Error("invalid_payload", $"Invalid payload for operation '{envelope.Op}'."),
             envelope.RequestId,
             cancellationToken);
     }
