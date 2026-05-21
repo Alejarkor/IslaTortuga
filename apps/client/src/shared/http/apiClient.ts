@@ -38,13 +38,19 @@ export async function request<TResponse>(
   path: string,
   options: RequestInit = {},
 ): Promise<TResponse> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+  } catch {
+    throw new Error('No se pudo conectar con la API. Comprueba que el backend este levantado en el puerto 3000.');
+  }
 
   const data = await response.json().catch(() => null);
 

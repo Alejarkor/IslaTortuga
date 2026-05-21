@@ -1,4 +1,6 @@
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Net.Http.Headers;
+using Microsoft.AspNetCore.StaticFiles;
 using IslaTortuga.Server.Api;
 using IslaTortuga.Server.Content;
 using IslaTortuga.Server.GameLoop;
@@ -38,10 +40,27 @@ app.UseWebSockets(new WebSocketOptions
 
 if (Directory.Exists(contentRootPath))
 {
+    var contentTypeProvider = new FileExtensionContentTypeProvider();
+    contentTypeProvider.Mappings[".tmj"] = "application/json";
+    contentTypeProvider.Mappings[".tsx"] = "application/xml";
+
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new PhysicalFileProvider(contentRootPath),
         RequestPath = "/content",
+        ContentTypeProvider = contentTypeProvider,
+        OnPrepareResponse = context =>
+        {
+            if (!DisableContentCache())
+            {
+                return;
+            }
+
+            var headers = context.Context.Response.Headers;
+            headers[HeaderNames.CacheControl] = "no-store, no-cache, must-revalidate";
+            headers[HeaderNames.Pragma] = "no-cache";
+            headers[HeaderNames.Expires] = "0";
+        },
     });
 }
 
@@ -65,4 +84,15 @@ static int ResolveGameServerPort()
 {
     var rawValue = Environment.GetEnvironmentVariable("GAME_SERVER_PORT");
     return int.TryParse(rawValue, out var port) ? port : 5055;
+}
+
+static bool DisableContentCache()
+{
+    var rawValue = Environment.GetEnvironmentVariable("CONTENT_PACKS_DISABLE_CACHE");
+    if (bool.TryParse(rawValue, out var parsed))
+    {
+        return parsed;
+    }
+
+    return false;
 }

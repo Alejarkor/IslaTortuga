@@ -51,6 +51,7 @@ Base de datos = memoria persistente
 pnpm run dev:client
 pnpm run dev:api
 pnpm run dev:game-server
+pnpm run dev:content-tool
 pnpm run build:api
 pnpm run build:game-server
 ```
@@ -58,3 +59,8 @@ pnpm run build:game-server
 ## Entorno
 
 La referencia unica de variables de entorno esta en [docs/ENTORNO.md](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/docs/ENTORNO.md).
+
+## Herramientas
+
+- Importador GUI de mapas y tilesets a content packs:
+  - [docs/CONTENT_TOOL.md](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/docs/CONTENT_TOOL.md)

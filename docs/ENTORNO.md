@@ -65,12 +65,22 @@ Este documento es la referencia unica para las variables de entorno del proyecto
   - Puerto HTTP/WebSocket del servidor de juego
   - Valor por defecto si falta: `5055`
 
+- `CONTENT_PACKS_DISABLE_CACHE`
+  - La usa [Program.cs](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/src/IslaTortuga.Server/Program.cs)
+  - Si vale `true`, el game server sirve `/content` con `Cache-Control: no-store`
+  - Muy recomendable en desarrollo mientras el pipeline de content packs siga cambiando
+
 ### Cliente web
 
 - `VITE_API_URL`
   - La usa [apiClient.ts](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/apps/client/src/shared/http/apiClient.ts)
   - Solo hace falta si quieres que el cliente apunte a una API distinta del proxy local de Vite
   - Si no se define, el cliente usa `/api`
+
+- `VITE_DISABLE_CONTENT_CACHE`
+  - La usa [assetCache.ts](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/apps/client/src/game/content/assetCache.ts)
+  - Si vale `true`, el cliente no guarda `Cache API` de content packs
+  - En desarrollo ahora mismo ya se desactiva cache por defecto incluso sin definir esta variable
 
 ## Regla practica
 

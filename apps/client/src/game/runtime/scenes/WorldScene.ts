@@ -13,7 +13,6 @@ const PLAYER_SPEED = 150;
 const PLAYER_KEY = 'player';
 
 export class WorldScene extends Phaser.Scene {
-  private abovePlayerLayer?: Phaser.Tilemaps.TilemapLayer;
   private lastSentInput = '0:0';
   private localPlayerEntityId?: string;
   private networkClient?: GameNetworkClient;
@@ -64,34 +63,32 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
 
-    const groundLayer = map.createLayer('Ground', tilesets, 0, 0);
-    const trunksLayer =
-      map.createLayer('Trunks', tilesets, 0, 0) ??
-      map.createLayer('Truncks', tilesets, 0, 0);
-    const abovePlayerLayer = map.createLayer('AbovePlayer', tilesets, 0, 0);
+    const warnings: string[] = [];
+    const groundLayer = this.createGroundLayer(map, tilesets);
+    const trunksLayer = this.createOptionalLayer(map, tilesets, ['Trunks', 'Truncks']);
+    const abovePlayerLayer = this.createOptionalLayer(map, tilesets, ['AbovePlayer']);
 
     if (!groundLayer) {
-      this.showDebugText('No existe la capa Ground en el mapa.');
+      this.showDebugText('El mapa no contiene ninguna tile layer renderizable.');
       return;
     }
 
     if (!trunksLayer) {
-      this.showDebugText('No existe la capa Trunks/Truncks en el mapa.');
-      return;
+      warnings.push('Sin capa Trunks/Truncks: no habra colision de troncos.');
     }
 
     if (!abovePlayerLayer) {
-      this.showDebugText('No existe la capa AbovePlayer en el mapa.');
-      return;
+      warnings.push('Sin capa AbovePlayer: no habra ocultacion tras copas.');
     }
 
     groundLayer.setDepth(0);
-    trunksLayer.setDepth(10);
-    abovePlayerLayer.setDepth(1000);
-    this.trunksLayer = trunksLayer as Phaser.Tilemaps.TilemapLayer;
-    this.abovePlayerLayer = abovePlayerLayer as Phaser.Tilemaps.TilemapLayer;
+    trunksLayer?.setDepth(10);
+    abovePlayerLayer?.setDepth(1000);
+    this.trunksLayer = this.asArcadeLayer(trunksLayer);
 
-    this.configureTileCollisions(this.trunksLayer);
+    if (this.trunksLayer) {
+      this.configureTileCollisions(this.trunksLayer);
+    }
     this.createPlayerAnimations();
 
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
@@ -105,13 +102,18 @@ export class WorldScene extends Phaser.Scene {
     >;
 
     this.infoText = this.add
-      .text(12, 12, `Content pack listo: ${runtime.manifest.contentPackId}. Conectando a game...`, {
-        fontFamily: 'monospace',
-        fontSize: '14px',
-        color: '#ffffff',
-        backgroundColor: '#00000088',
-        padding: { x: 8, y: 6 },
-      })
+      .text(
+        12,
+        12,
+        this.buildInitialStatusMessage(runtime.manifest.contentPackId, warnings),
+        {
+          fontFamily: 'monospace',
+          fontSize: '14px',
+          color: '#ffffff',
+          backgroundColor: '#00000088',
+          padding: { x: 8, y: 6 },
+        },
+      )
       .setScrollFactor(0)
       .setDepth(1000);
 
@@ -257,6 +259,61 @@ export class WorldScene extends Phaser.Scene {
     layer.setCollisionByProperty({ collider: true });
     layer.setCollisionByProperty({ collides: true });
     layer.setCollisionFromCollisionGroup();
+  }
+
+  private createGroundLayer(
+    map: Phaser.Tilemaps.Tilemap,
+    tilesets: Phaser.Tilemaps.Tileset[],
+  ) {
+    const preferredLayer = this.createOptionalLayer(map, tilesets, ['Ground']);
+    if (preferredLayer) {
+      return preferredLayer;
+    }
+
+    for (const layerData of map.layers) {
+      const layer = map.createLayer(layerData.name, tilesets, 0, 0);
+      if (layer) {
+        return layer;
+      }
+    }
+
+    return null;
+  }
+
+  private createOptionalLayer(
+    map: Phaser.Tilemaps.Tilemap,
+    tilesets: Phaser.Tilemaps.Tileset[],
+    layerNames: string[],
+  ) {
+    for (const layerName of layerNames) {
+      const layer = map.createLayer(layerName, tilesets, 0, 0);
+      if (layer) {
+        return layer;
+      }
+    }
+
+    return null;
+  }
+
+  private buildInitialStatusMessage(contentPackId: string, warnings: string[]) {
+    if (warnings.length === 0) {
+      return `Content pack listo: ${contentPackId}. Conectando a game...`;
+    }
+
+    return [
+      `Content pack listo: ${contentPackId}. Conectando a game...`,
+      ...warnings,
+    ].join('\n');
+  }
+
+  private asArcadeLayer(
+    layer: Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer | null,
+  ) {
+    if (!layer || !('setCollisionByProperty' in layer)) {
+      return undefined;
+    }
+
+    return layer as Phaser.Tilemaps.TilemapLayer;
   }
 
   private showDebugText(message: string) {

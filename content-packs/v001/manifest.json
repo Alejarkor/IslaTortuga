@@ -1,70 +1,70 @@
 {
   "contentPackId": "islatortuga-v001",
   "version": "v001",
-  "mapId": "island_01",
+  "mapId": "test-map",
   "files": [
-    {
-      "id": "map.island_01",
-      "type": "map",
-      "url": "/content/v001/maps/island_01.tmj",
-      "hash": "sha256-pending",
-      "size": 26390
-    },
-    {
-      "id": "tileset.grass",
-      "type": "image",
-      "url": "/content/v001/tilesets/TX Tileset Grass.png",
-      "hash": "sha256-pending",
-      "size": 11010
-    },
-    {
-      "id": "tileset.plant",
-      "type": "image",
-      "url": "/content/v001/tilesets/TX Plant.png",
-      "hash": "sha256-pending",
-      "size": 65180
-    },
-    {
-      "id": "tileset.props",
-      "type": "image",
-      "url": "/content/v001/tilesets/TX Props.png",
-      "hash": "sha256-pending",
-      "size": 86560
-    },
     {
       "id": "spritesheet.player",
       "type": "spritesheet",
       "url": "/content/v001/sprites/characters/TX Player.png",
-      "hash": "sha256-pending",
-      "size": 506
+      "hash": "sha256-4d69431f5b4fc56d22ab87f95e6dbecf50796e3178c13c59a0885eaf74e8078d",
+      "size": 2523
+    },
+    {
+      "id": "map.test-map",
+      "type": "map",
+      "url": "/content/v001/maps/test-map.tmj",
+      "hash": "sha256-011b8e015c78a699beb7abfd18ff3bdae714b6264c452b4f137366a046c0f482",
+      "size": 22062
+    },
+    {
+      "id": "tileset.tx-tileset-grass",
+      "type": "image",
+      "url": "/content/v001/tilesets/TX Tileset Grass.png",
+      "hash": "sha256-3afee45fa3ab4f2908114d5caa84fad20df568e276782550d3e9548e4e40a555",
+      "size": 11016
+    },
+    {
+      "id": "tileset.tx-props",
+      "type": "image",
+      "url": "/content/v001/tilesets/TX Props.png",
+      "hash": "sha256-bc100749fcf3cc9008a0078454f704bc63f9000d6f3e4a91574b83da098fa71e",
+      "size": 86563
+    },
+    {
+      "id": "tileset.tx-plant",
+      "type": "image",
+      "url": "/content/v001/tilesets/TX Plant.png",
+      "hash": "sha256-77b5289f0e85f8e0f059c672ab620208db861e82ecedec615551562032e3752c",
+      "size": 65183
     },
     {
       "id": "definitions.visuals",
       "type": "json",
       "url": "/content/v001/definitions/visual-definitions.json",
       "hash": "sha256-pending",
-      "size": 0
+      "size": 1562
     },
     {
       "id": "definitions.entityArchetypes",
       "type": "json",
       "url": "/content/v001/definitions/entity-archetypes.json",
       "hash": "sha256-pending",
-      "size": 0
+      "size": 92
     },
     {
       "id": "definitions.itemDefinitions",
       "type": "json",
       "url": "/content/v001/definitions/item-definitions.json",
       "hash": "sha256-pending",
-      "size": 0
+      "size": 18
     },
     {
       "id": "definitions.rules",
       "type": "json",
       "url": "/content/v001/definitions/rules.json",
       "hash": "sha256-pending",
-      "size": 0
+      "size": 48
     }
   ]
 }

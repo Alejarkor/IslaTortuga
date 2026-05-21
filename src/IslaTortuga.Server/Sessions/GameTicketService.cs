@@ -8,6 +8,11 @@ namespace IslaTortuga.Server.Sessions;
 public sealed class GameTicketService
 {
     private static readonly TimeSpan TicketLifetime = TimeSpan.FromSeconds(30);
+    private static readonly JsonSerializerOptions TicketJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
     private readonly ConcurrentDictionary<string, byte> _consumedTicketIds = new();
 
     public GameTicket CreateJoinTicket(SessionCookiePrincipal principal)
@@ -119,7 +124,7 @@ public sealed class GameTicketService
         }
 
         var payloadBytes = Base64UrlDecode(encodedPayload);
-        return JsonSerializer.Deserialize<SignedGameTicketPayload>(payloadBytes);
+        return JsonSerializer.Deserialize<SignedGameTicketPayload>(payloadBytes, TicketJsonOptions);
     }
 
     private string ComputeSignature(string encodedPayload)

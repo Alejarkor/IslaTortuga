@@ -9,9 +9,11 @@
     "dev:api": "pnpm --filter api-server start:dev",
     "dev:server": "pnpm --filter api-server start:dev",
     "dev:game-server": "dotnet run --project ./src/IslaTortuga.Server/IslaTortuga.Server.csproj",
+    "dev:content-tool": "dotnet run --project ./src/IslaTortuga.ContentTool/IslaTortuga.ContentTool.csproj",
     "build": "pnpm -r build",
     "build:api": "pnpm --filter api-server build",
     "build:game-server": "dotnet build ./src/IslaTortuga.Server/IslaTortuga.Server.csproj",
+    "build:content-tool": "dotnet build ./src/IslaTortuga.ContentTool/IslaTortuga.ContentTool.csproj",
     "lint": "pnpm -r lint"
   },
   "engines": {

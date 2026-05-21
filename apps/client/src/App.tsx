@@ -3,13 +3,12 @@ import { Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { loginUser, registerUser, type UserDto } from './shared/http/apiClient';
 import {
   clearAuth,
-  getStoredToken,
   loadCurrentUser,
   saveAuth,
 } from './features/auth/authSession';
 import { GameBootstrapPage } from './features/game-session/GameBootstrapPage';
 
-function LoginPage() {
+function LoginPage({ onAuthSuccess }: { onAuthSuccess: (user: UserDto) => void }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,9 +23,10 @@ function LoginPage() {
     try {
       const response = await loginUser({ email, password });
       saveAuth(response);
+      onAuthSuccess(response.user);
       navigate('/portal');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión');
+      setError(err instanceof Error ? err.message : 'No se pudo iniciar sesion');
     } finally {
       setLoading(false);
     }
@@ -43,7 +43,7 @@ function LoginPage() {
             <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required />
           </label>
           <label>
-            Contraseña
+            Contrasena
             <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" required />
           </label>
           {error && <p className="error">{error}</p>}
@@ -57,7 +57,7 @@ function LoginPage() {
   );
 }
 
-function RegisterPage() {
+function RegisterPage({ onAuthSuccess }: { onAuthSuccess: (user: UserDto) => void }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [nickname, setNickname] = useState('');
@@ -73,6 +73,7 @@ function RegisterPage() {
     try {
       const response = await registerUser({ email, password, nickname });
       saveAuth(response);
+      onAuthSuccess(response.user);
       navigate('/portal');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo crear la cuenta');
@@ -96,7 +97,7 @@ function RegisterPage() {
             <input value={nickname} onChange={(event) => setNickname(event.target.value)} required />
           </label>
           <label>
-            Contraseña
+            Contrasena
             <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" minLength={8} required />
           </label>
           {error && <p className="error">{error}</p>}
@@ -110,27 +111,18 @@ function RegisterPage() {
   );
 }
 
-function PortalPage() {
+function PortalPage({
+  user,
+  onLogout,
+}: {
+  user: UserDto;
+  onLogout: () => void;
+}) {
   const navigate = useNavigate();
-  const [user, setUser] = useState<UserDto | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadCurrentUser()
-      .then((currentUser) => setUser(currentUser))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
-    return <main className="center-page">Comprobando sesión...</main>;
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
 
   function handleLogout() {
     clearAuth();
+    onLogout();
     navigate('/login');
   }
 
@@ -139,10 +131,10 @@ function PortalPage() {
       <section className="card portal-card">
         <p className="eyebrow">Portal</p>
         <h1>Bienvenido, {user.profile?.nickname ?? user.email}</h1>
-        <p className="muted">Sesión validada contra la API. Ya puedes entrar al mapa Phaser.</p>
+        <p className="muted">Sesion validada contra la API. Ya puedes entrar al mapa Phaser.</p>
         <div className="actions">
           <button onClick={() => navigate('/game')}>Entrar al mundo de prueba</button>
-          <button className="secondary" onClick={handleLogout}>Cerrar sesión</button>
+          <button className="secondary" onClick={handleLogout}>Cerrar sesion</button>
         </div>
       </section>
     </main>
@@ -154,13 +146,49 @@ function GamePage() {
 }
 
 export function App() {
+  const [user, setUser] = useState<UserDto | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadCurrentUser()
+      .then((currentUser) => {
+        if (!cancelled) {
+          setUser(currentUser);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setCheckingSession(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (checkingSession) {
+    return <main className="center-page">Comprobando sesion...</main>;
+  }
+
   return (
     <Routes>
-      <Route path="/" element={<Navigate to={getStoredToken() ? '/portal' : '/login'} replace />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/portal" element={<PortalPage />} />
-      <Route path="/game" element={<GamePage />} />
+      <Route path="/" element={<Navigate to={user ? '/portal' : '/login'} replace />} />
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/portal" replace /> : <LoginPage onAuthSuccess={setUser} />}
+      />
+      <Route
+        path="/register"
+        element={user ? <Navigate to="/portal" replace /> : <RegisterPage onAuthSuccess={setUser} />}
+      />
+      <Route
+        path="/portal"
+        element={user ? <PortalPage user={user} onLogout={() => setUser(null)} /> : <Navigate to="/login" replace />}
+      />
+      <Route path="/game" element={user ? <GamePage /> : <Navigate to="/login" replace />} />
     </Routes>
   );
 }
