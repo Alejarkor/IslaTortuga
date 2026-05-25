@@ -131,7 +131,7 @@ function PortalPage({
       <section className="card portal-card">
         <p className="eyebrow">Portal</p>
         <h1>Bienvenido, {user.profile?.nickname ?? user.email}</h1>
-        <p className="muted">Sesion validada contra la API. Ya puedes entrar al mapa Phaser.</p>
+        <p className="muted">Sesion validada contra la API. Ya puedes entrar al mapa Babylon.</p>
         <div className="actions">
           <button onClick={() => navigate('/game')}>Entrar al mundo de prueba</button>
           <button className="secondary" onClick={handleLogout}>Cerrar sesion</button>

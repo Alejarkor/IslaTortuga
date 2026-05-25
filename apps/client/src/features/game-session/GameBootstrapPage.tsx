@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PhaserGame } from '../../game/runtime/PhaserGame';
+import { BabylonGame } from '../../game/runtime/BabylonGame';
 import {
   bootstrapGameRuntime,
   type GameRuntime,
@@ -33,5 +33,5 @@ export function GameBootstrapPage() {
     return <main className="center-page">Preparando content pack y arranque del juego...</main>;
   }
 
-  return <PhaserGame runtime={runtime} />;
+  return <BabylonGame runtime={runtime} />;
 }

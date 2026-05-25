@@ -29,10 +29,10 @@
 2. El cliente descarga el `manifest.json`.
 3. `ContentDownloader` asegura en cache los archivos del pack.
 4. `AssetCatalog` carga las definiciones visuales.
-5. Solo entonces arranca Phaser.
+5. Solo entonces arranca Babylon.
 
 ## Regla de organizacion
 
 - Nada de simulacion de juego en `apps/server`.
-- Nada de acceso directo a base de datos en el game server salvo que se diseñe expresamente.
+- Nada de acceso directo a base de datos en el game server salvo que se disene expresamente.
 - El punto de acoplamiento entre ambos lados debe ser el protocolo y el flujo de tickets/sesion.

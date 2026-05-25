@@ -9,13 +9,3 @@ export type GameRuntime = {
   startGame: StartGameResponse;
   authSession?: AuthAcceptedPayload | null;
 };
-
-let currentGameRuntime: GameRuntime | null = null;
-
-export function setCurrentGameRuntime(runtime: GameRuntime | null) {
-  currentGameRuntime = runtime;
-}
-
-export function getCurrentGameRuntime() {
-  return currentGameRuntime;
-}

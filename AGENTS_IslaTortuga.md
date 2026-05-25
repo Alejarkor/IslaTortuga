@@ -7,7 +7,7 @@
 
 ## 0. Regla principal
 
-Este proyecto no es un prototipo cualquiera ni un juego single-player pintado en Phaser. Es un juego multijugador web, server-authoritative, de deducción social, exploración, supervivencia ligera y narrativa procedural.
+Este proyecto no es un prototipo cualquiera ni un juego single-player pintado en Babylon. Es un juego multijugador web, server-authoritative, de deducción social, exploración, supervivencia ligera y narrativa procedural.
 
 Antes de modificar código:
 
@@ -62,7 +62,7 @@ La primera gran fase del proyecto busca construir una base jugable mínima:
 3. API backend.
 4. Frontend web con login y portal/sala de espera.
 5. Servidor realtime autoritativo.
-6. Cliente Phaser capaz de entrar al mapa.
+6. Cliente Babylon capaz de entrar al mapa.
 7. Movimiento de personaje validado por servidor.
 8. Visualización de otros jugadores.
 9. Chat por proximidad básico.
@@ -90,7 +90,7 @@ Estructura recomendada:
 ```txt
 /
 ├─ apps/
-│  ├─ web/                # React + Vite + Phaser embebido
+│  ├─ web/                # React + Vite + Babylon embebido
 │  ├─ api/                # API HTTP: auth, users, portal, match management
 │  └─ realtime/           # Servidor WebSocket autoritativo
 ├─ packages/
@@ -107,8 +107,8 @@ Estructura recomendada:
 ### Frontend
 
 - `Vite + React + TypeScript` para UI de login, portal, lobby, paneles y HUD.
-- `Phaser 3` para renderizado del mundo 2D, cámara, sprites, animaciones, tilemaps y efectos.
-- Phaser no debe ser la autoridad del juego. Phaser pinta e interpola; el servidor decide.
+- `Babylon.js` para renderizado del mundo, camara, sprites, capas de mapa y efectos.
+- Babylon no debe ser la autoridad del juego. Babylon pinta e interpola; el servidor decide.
 
 ### Backend HTTP
 
@@ -157,7 +157,7 @@ No mezclar ambos sin necesidad.
 - Unit tests: Vitest.
 - Tests de integración de API: Vitest + cliente HTTP interno.
 - Tests E2E web: Playwright, cuando exista flujo estable.
-- La lógica de `game-core` debe ser testeable sin navegador, sin Phaser y sin base de datos.
+- La logica de `game-core` debe ser testeable sin navegador, sin Babylon y sin base de datos.
 
 ---
 
@@ -192,7 +192,7 @@ El servidor:
 - No confiar en coordenadas mandadas por el cliente.
 - No guardar estado crítico de partida solo en el navegador.
 - No resolver inventario solo en UI.
-- No dejar que Phaser determine colisiones autoritativas.
+- No dejar que Babylon determine colisiones autoritativas.
 - No exponer mensajes de chat a jugadores fuera de rango.
 - No meter reglas de gameplay dentro de componentes React.
 - No convertir Tiled en motor de gameplay. Tiled describe mapa y metadatos; el motor es nuestro.
@@ -507,11 +507,11 @@ No optimizar prematuramente. Primero claridad y estabilidad.
 
 ---
 
-## 10. Phaser y Tiled
+## 10. Babylon y Tiled
 
-### Rol de Phaser
+### Rol de Babylon
 
-Phaser sirve para:
+Babylon sirve para:
 
 - Renderizar tilemap.
 - Renderizar personajes.
@@ -520,7 +520,7 @@ Phaser sirve para:
 - Luces/efectos visuales si procede.
 - HUD simple del canvas si conviene.
 
-Phaser no sirve como autoridad de:
+Babylon no sirve como autoridad de:
 
 - Posición final.
 - Colisiones reales.
@@ -1004,7 +1004,7 @@ Tareas:
 
 1. Servidor WebSocket autenticado.
 2. Endpoint para crear/unirse a partida.
-3. Phaser carga mapa.
+3. Babylon carga mapa.
 4. Cliente conecta a realtime.
 5. Servidor simula movimiento.
 6. Colisiones básicas.
@@ -1109,7 +1109,7 @@ Codex debe resumir:
 
 - Borrar grandes carpetas.
 - Cambiar de framework.
-- Migrar de Phaser a Unity.
+- Migrar de Babylon a Unity.
 - Cambiar PostgreSQL por otra DB.
 - Meter Firebase/Supabase como sustituto de arquitectura propia.
 - Añadir pagos, analytics o servicios externos.
@@ -1121,9 +1121,9 @@ Codex debe resumir:
 
 ## 21. Anti-errores frecuentes
 
-### Error: tratar Phaser como Unity
+### Error: tratar Babylon como Unity
 
-Phaser no tiene un ecosistema tipo Unity con prefabs, colliders y player controller listos de la misma forma. Hay que programar sistemas y usar Tiled para datos de mapa. No diseñar como si hubiera GameObjects autoritativos.
+Babylon no tiene un ecosistema tipo Unity con prefabs, colliders y player controller listos de la misma forma. Hay que programar sistemas y usar Tiled para datos de mapa. No disenar como si hubiera GameObjects autoritativos.
 
 ### Error: cliente autoritativo
 
@@ -1139,7 +1139,7 @@ No colocar objetos/pistas al azar sin garantizar que el objetivo se puede resolv
 
 ### Error: mezclar lógica con UI
 
-React no debe contener reglas de inventario o colisiones. Phaser no debe contener reglas de roles. La lógica debe ir en servicios o `game-core`.
+React no debe contener reglas de inventario o colisiones. Babylon no debe contener reglas de roles. La logica debe ir en servicios o `game-core`.
 
 ### Error: persistir demasiado
 
@@ -1243,7 +1243,7 @@ Debe mostrar:
 
 Debe mostrar:
 
-- Canvas Phaser.
+- Canvas Babylon.
 - HUD mínimo.
 - Chat.
 - Estado de conexión.
@@ -1400,7 +1400,7 @@ Si el usuario pide avanzar sin especificar, priorizar en este orden:
 3. Auth.
 4. Portal.
 5. Realtime autenticado.
-6. Mapa Phaser/Tiled.
+6. Mapa Babylon/Tiled.
 7. Movimiento server-authoritative.
 8. Chat por proximidad.
 9. Inventario básico.
@@ -1439,7 +1439,6 @@ No ocultar fallos. No decir que algo está probado si no se ejecutó.
 
 ## 32. Resumen mental del proyecto para Codex
 
-Este proyecto quiere construir un juego multijugador web de deducción social llamado `El Sueño de la Tortuga`. El jugador entra con cuenta, accede a un portal, se une a una partida y explora una isla 2D top-down pixel art. La partida gira en torno a reparar y encender un faro antes del séptimo día, mientras una minoría de jugadores sabotea desde dentro. La arquitectura debe ser seria: PostgreSQL, API, auth, servidor realtime autoritativo, Phaser como cliente visual, Tiled como editor de mapa, lógica pura separada y validación estricta.
+Este proyecto quiere construir un juego multijugador web de deducción social llamado `El Sueño de la Tortuga`. El jugador entra con cuenta, accede a un portal, se une a una partida y explora una isla 2D top-down pixel art. La partida gira en torno a reparar y encender un faro antes del septimo dia, mientras una minoria de jugadores sabotea desde dentro. La arquitectura debe ser seria: PostgreSQL, API, auth, servidor realtime autoritativo, Babylon como cliente visual, Tiled como editor de mapa, logica pura separada y validacion estricta.
 
 La prioridad no es hacer una demo bonita rápidamente. La prioridad es construir una base sólida para que después puedan crecer sistemas como chat por proximidad, inventario, pistas forenses, escondites, proceduralidad narrativa y roles ocultos sin tener que rehacerlo todo.
-

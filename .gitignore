@@ -10,6 +10,8 @@ out/
 coverage/
 bin/
 obj/
+.vite/
+.turbo/
 
 # Env files
 .env
@@ -58,6 +60,31 @@ data/
 # Phaser / assets temp
 *.aseprite~
 *.tmp
+
+# Babylon / frontend caches
+apps/client/.vite/
+apps/client/dist/
+
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+[Uu]ser[Ss]ettings/
+Assets/AssetStoreTools*
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.unityproj
+*.sln.iml
 
 # Misc
 .cache/

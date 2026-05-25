@@ -10,8 +10,8 @@
     "lint": "echo \"Lint not configured yet\""
   },
   "dependencies": {
+    "@babylonjs/core": "^9.9.1",
     "@vitejs/plugin-react": "latest",
-    "phaser": "latest",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "latest",
