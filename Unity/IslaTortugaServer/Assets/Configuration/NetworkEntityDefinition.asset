@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 0}
   m_Name: NetworkEntityDefinition
   m_EditorClassIdentifier: Assembly-CSharp:IslaTortuga.Server.Core.World:NetworkEntityDefinitionAsset
-  entityType: 
-  prefab: {fileID: 0}
+  entityType: Player
+  prefab: {fileID: 4239469568501685663, guid: 302f04f6f843fed4eb52022ce0cc1d91, type: 3}

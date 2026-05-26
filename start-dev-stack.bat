@@ -49,11 +49,14 @@ if errorlevel 1 (
 
 docker info >nul 2>nul
 if errorlevel 1 (
-  call :start_docker
-  if errorlevel 1 exit /b 1
+  echo [ERROR] Docker Desktop no esta listo.
+  echo Abre Docker Desktop manualmente y vuelve a lanzar este script.
+  echo.
+  pause
+  exit /b 1
 )
 
-echo [1/3] Levantando PostgreSQL con docker compose...
+echo [1/4] Levantando PostgreSQL con docker compose...
 docker compose up -d postgres
 if errorlevel 1 (
   echo.
@@ -64,10 +67,14 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [2/3] Comprobando API Nest...
+echo [2/4] Aplicando migraciones Prisma...
+call :apply_prisma_migrations
+if errorlevel 1 exit /b 1
+
+echo [3/4] Comprobando API Nest...
 call :launch_if_needed 3000 "API Nest" "IslaTortuga API" "pnpm run dev:api"
 
-echo [3/3] Comprobando cliente Vite...
+echo [4/4] Comprobando cliente Vite...
 call :launch_if_needed 5173 "Cliente Vite" "IslaTortuga Client" "pnpm run dev:client"
 
 echo.
@@ -88,47 +95,28 @@ echo.
 pause
 exit /b 0
 
-:start_docker
-echo [INFO] Docker Desktop no esta en ejecucion. Arrancando...
-set "DOCKER_EXE="
-if exist "C:\Program Files\Docker\Docker\Docker Desktop.exe" (
-  set "DOCKER_EXE=C:\Program Files\Docker\Docker\Docker Desktop.exe"
+:apply_prisma_migrations
+if not exist "%ROOT_DIR%apps\server\node_modules\.bin\prisma.cmd" (
+  echo [WARN] No se ha encontrado Prisma CLI en apps\server\node_modules\.bin.
+  echo [WARN] Se omite la aplicacion automatica de migraciones.
+  exit /b 0
 )
-if not defined DOCKER_EXE (
-  if exist "%LOCALAPPDATA%\Docker\Docker Desktop.exe" (
-    set "DOCKER_EXE=%LOCALAPPDATA%\Docker\Docker Desktop.exe"
-  )
-)
-if not defined DOCKER_EXE (
-  echo [ERROR] No se ha encontrado Docker Desktop.exe. Arrancalo manualmente y vuelve a intentarlo.
+
+pushd "%ROOT_DIR%apps\server" >nul
+cmd /c ""%ROOT_DIR%apps\server\node_modules\.bin\prisma.cmd" migrate deploy"
+set "PRISMA_EXIT=%ERRORLEVEL%"
+popd >nul
+
+if not "%PRISMA_EXIT%"=="0" (
+  echo.
+  echo [ERROR] No se han podido aplicar las migraciones Prisma.
+  echo Revisa la conexion a PostgreSQL y el estado de node_modules.
   echo.
   pause
   exit /b 1
 )
 
-start "" "%DOCKER_EXE%"
-echo [INFO] Esperando a que Docker Desktop este listo (puede tardar hasta 60s)...
-call :wait_for_docker
-if errorlevel 1 (
-  echo [ERROR] Docker Desktop no ha arrancado a tiempo. Intentalo de nuevo cuando este listo.
-  echo.
-  pause
-  exit /b 1
-)
-echo [OK] Docker Desktop listo.
-echo.
 exit /b 0
-
-:wait_for_docker
-set /a TRIES=0
-:wait_for_docker_loop
-timeout /t 3 /nobreak >nul
-docker info >nul 2>nul
-if not errorlevel 1 exit /b 0
-set /a TRIES+=1
-if !TRIES! GEQ 20 exit /b 1
-echo   ... sigo esperando (!TRIES!/20^)
-goto wait_for_docker_loop
 
 :launch_if_needed
 set "PORT=%~1"
