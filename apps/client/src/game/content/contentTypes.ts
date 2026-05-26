@@ -36,6 +36,7 @@ export type PlayerAnimationDefinition = {
 };
 
 export type PlayerVisualDefinition = {
+  visualId: string;
   textureKey: string;
   imageFileId: string;
   frameWidth: number;
@@ -45,9 +46,7 @@ export type PlayerVisualDefinition = {
 
 export type VisualDefinitions = {
   maps: Record<string, MapVisualDefinition>;
-  players: {
-    default: PlayerVisualDefinition;
-  };
+  players: Record<string, PlayerVisualDefinition>;
 };
 
 export type AssetCatalogDefinitionFiles = {

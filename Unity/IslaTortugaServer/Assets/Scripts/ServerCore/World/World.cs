@@ -1,46 +1,108 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace IslaTortuga.Server.Core.World
 {
-    public abstract class NetworkEntity
+    public abstract class NetworkEntity : MonoBehaviour
     {
-        protected NetworkEntity(string entityId, string entityType, float x, float y)
+        private string _entityId = string.Empty;
+        private string _entityType = string.Empty;
+        private string _roomId = string.Empty;
+
+        public string EntityId
         {
-            EntityId = entityId;
-            EntityType = entityType;
-            X = x;
-            Y = y;
+            get { return _entityId; }
         }
 
-        public string EntityId { get; }
+        public string EntityType
+        {
+            get { return _entityType; }
+        }
 
-        public string EntityType { get; }
+        public string RoomId
+        {
+            get { return _roomId; }
+        }
 
-        public float X { get; protected set; }
+        public float X
+        {
+            get { return transform.position.x; }
+        }
 
-        public float Y { get; protected set; }
+        public float Y
+        {
+            get { return transform.position.z; }
+        }
+
+        protected void InitializeEntity(string entityId, string entityType, string roomId, float x, float y)
+        {
+            if (string.IsNullOrWhiteSpace(entityId))
+            {
+                throw new ArgumentException("EntityId is required.", nameof(entityId));
+            }
+
+            if (string.IsNullOrWhiteSpace(entityType))
+            {
+                throw new ArgumentException("EntityType is required.", nameof(entityType));
+            }
+
+            _entityId = entityId;
+            _entityType = entityType;
+            _roomId = roomId ?? string.Empty;
+            transform.position = new Vector3(x, 0f, y);
+            gameObject.name = entityType + ":" + entityId;
+        }
+
+        public abstract void ServerTick(float deltaSeconds);
     }
 
     public sealed class PlayerEntity : NetworkEntity
     {
-        private const float Speed = 140f;
+        private const float DefaultSpeed = 7f;
         private float _moveX;
         private float _moveY;
+        private CharacterController _characterController;
 
-        public PlayerEntity(string entityId, string userId, string displayName, float x, float y)
-            : base(entityId, "player", x, y)
-        {
-            UserId = userId;
-            DisplayName = displayName;
-        }
+        public string UserId { get; private set; } = string.Empty;
 
-        public string UserId { get; }
+        public string DisplayName { get; private set; } = string.Empty;
 
-        public string DisplayName { get; }
+        public string VisualId { get; private set; } = string.Empty;
 
         public string Facing { get; private set; } = "down";
+
+        public string SessionId { get; private set; } = string.Empty;
+
+        public bool IsConnected { get; private set; }
+
+        private void Awake()
+        {
+            _characterController = GetComponent<CharacterController>();
+        }
+
+        public void Initialize(string entityId, string entityType, string roomId, string userId, string displayName, string visualId, float x, float y)
+        {
+            InitializeEntity(entityId, entityType, roomId, x, y);
+            UserId = userId ?? string.Empty;
+            DisplayName = displayName ?? string.Empty;
+            VisualId = visualId ?? string.Empty;
+        }
+
+        public void AttachSession(string sessionId)
+        {
+            SessionId = sessionId ?? string.Empty;
+            IsConnected = true;
+        }
+
+        public void MarkDisconnected()
+        {
+            SessionId = string.Empty;
+            IsConnected = false;
+            _moveX = 0f;
+            _moveY = 0f;
+        }
 
         public void ApplyInput(float moveX, float moveY)
         {
@@ -57,10 +119,17 @@ namespace IslaTortuga.Server.Core.World
             }
         }
 
-        public void Tick(float deltaSeconds)
+        public override void ServerTick(float deltaSeconds)
         {
-            X += _moveX * Speed * deltaSeconds;
-            Y += _moveY * Speed * deltaSeconds;
+            var motion = new Vector3(_moveX, 0f, _moveY) * DefaultSpeed * deltaSeconds;
+
+            if (_characterController != null)
+            {
+                _characterController.Move(motion);
+                return;
+            }
+
+            transform.position += motion;
         }
 
         private static float Clamp(float value, float min, float max)
@@ -92,6 +161,22 @@ namespace IslaTortuga.Server.Core.World
             lock (_sync)
             {
                 return _entities.Values.ToArray();
+            }
+        }
+
+        public bool TryGet(string entityId, out NetworkEntity entity)
+        {
+            lock (_sync)
+            {
+                return _entities.TryGetValue(entityId, out entity);
+            }
+        }
+
+        public bool Remove(string entityId, out NetworkEntity entity)
+        {
+            lock (_sync)
+            {
+                return _entities.TryGetValue(entityId, out entity) && _entities.Remove(entityId);
             }
         }
 

@@ -4,6 +4,8 @@ import { createHmac, randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { resolveContentIndexPath } from './content-paths';
 
+const DEFAULT_PLAYER_VISUAL_ID = 'player.default';
+
 type ContentPackIndex = {
   defaultContentPackId: string;
   packs: Array<{
@@ -39,10 +41,12 @@ export class GameSessionService {
       throw new Error('No existe el usuario solicitado para start-game.');
     }
 
+    const playerVisualId = user.profile?.playerVisualId ?? DEFAULT_PLAYER_VISUAL_ID;
     const gameTicket = this.signGameTicket({
       ticketId: randomUUID().replace(/-/g, ''),
       userId: user.id,
       displayName: user.profile?.nickname ?? user.email,
+      visualId: playerVisualId,
       purpose: 'join',
       previousSessionId: null,
       expiresAt: Date.now() + 30_000,
@@ -57,6 +61,9 @@ export class GameSessionService {
       mapId: defaultPack.mapId,
       manifestUrl: defaultPack.manifestUrl,
       webSocketUrl: '/ws/game',
+      localPlayerAppearance: {
+        visualId: playerVisualId,
+      },
     };
   }
 
@@ -70,6 +77,7 @@ export class GameSessionService {
     ticketId: string;
     userId: string;
     displayName: string;
+    visualId: string;
     purpose: 'join' | 'reconnect';
     previousSessionId: string | null;
     expiresAt: number;

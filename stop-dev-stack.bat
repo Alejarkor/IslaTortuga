@@ -11,9 +11,7 @@ echo.
 
 call :stop_port 3000 "API Nest"
 call :stop_port 5173 "Cliente Vite"
-call :stop_port 5055 "Game Server"
-
-echo [4/4] Parando PostgreSQL de docker compose...
+echo [3/3] Parando PostgreSQL de docker compose...
 docker compose stop postgres >nul 2>nul
 if errorlevel 1 (
   echo [INFO] No se ha podido parar postgres o ya estaba detenido.
@@ -21,6 +19,9 @@ if errorlevel 1 (
   echo [OK] PostgreSQL detenido.
 )
 
+echo.
+echo El game server de Unity no se detiene desde este script.
+echo Si esta abierto en el editor, tendras que pararlo manualmente.
 echo.
 echo Stack detenido.
 echo.

@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using IslaTortuga.Server.Core.Protocol;
 using IslaTortuga.Server.Core.Replication;
 using IslaTortuga.Server.Core.Rooms;
 using IslaTortuga.Server.Core.Sessions;
+using IslaTortuga.Server.Core.World;
 using IslaTortuga.Server.Core.World.Tiled;
 
 namespace IslaTortuga.Server.Core.Embedded
@@ -19,6 +21,12 @@ namespace IslaTortuga.Server.Core.Embedded
         public string TicketSecret { get; set; }
 
         public float TickDeltaSeconds { get; set; } = 0.05f;
+
+        public bool DespawnDisconnectedPlayers { get; set; } = true;
+
+        public NetworkEntityPrefabDefinition PlayerDefinition { get; set; }
+
+        public IReadOnlyList<NetworkEntityPrefabDefinition> PrefabDefinitions { get; set; } = Array.Empty<NetworkEntityPrefabDefinition>();
     }
 
     public sealed class EmbeddedGameServerJoinResult
@@ -67,6 +75,7 @@ namespace IslaTortuga.Server.Core.Embedded
         private readonly SessionManager _sessionManager;
         private readonly GameRoomManager _gameRoomManager;
         private readonly SnapshotBuilder _snapshotBuilder;
+        private readonly ConcurrentQueue<string> _pendingDisconnectedConnectionIds = new ConcurrentQueue<string>();
 
         public EmbeddedGameServerHost(EmbeddedGameServerHostOptions options)
         {
@@ -88,6 +97,9 @@ namespace IslaTortuga.Server.Core.Embedded
                     DefaultMapPath = options.DefaultMapPath,
                     DefaultRoomId = options.DefaultRoomId,
                     DefaultWorldId = options.DefaultWorldId,
+                    DespawnDisconnectedPlayers = options.DespawnDisconnectedPlayers,
+                    PlayerDefinition = options.PlayerDefinition,
+                    PrefabDefinitions = options.PrefabDefinitions,
                 },
                 tiledWorldBuilder);
 
@@ -123,9 +135,19 @@ namespace IslaTortuga.Server.Core.Embedded
             get { return _gameRoomManager.DefaultRoom.World.CurrentTick; }
         }
 
-        public GameTicket CreateJoinTicket(string userId, string displayName)
+        public GameTicket CreateJoinTicket(string userId, string displayName, string visualId)
         {
-            return _gameTicketService.CreateJoinTicket(userId, displayName);
+            return _gameTicketService.CreateJoinTicket(userId, displayName, visualId);
+        }
+
+        public GameRoom DefaultRoom
+        {
+            get { return _gameRoomManager.DefaultRoom; }
+        }
+
+        public ServerNetworkSpawner Spawner
+        {
+            get { return _gameRoomManager.DefaultRoom.World.Spawner; }
         }
 
         public bool TryJoin(
@@ -148,6 +170,26 @@ namespace IslaTortuga.Server.Core.Embedded
             return true;
         }
 
+        public bool TryReconnect(
+            string signedTicket,
+            string connectionId,
+            out EmbeddedGameServerJoinResult result,
+            out string errorCode)
+        {
+            result = null;
+
+            GameTicket ticket;
+            if (!_gameTicketService.TryConsume(signedTicket, TicketPurpose.Reconnect, out ticket, out errorCode))
+            {
+                return false;
+            }
+
+            var session = _sessionManager.ReconnectSession(ticket, connectionId);
+            var roomPlayer = _gameRoomManager.AttachOrGetSession(session);
+            result = BuildJoinResult(roomPlayer);
+            return true;
+        }
+
         public bool ApplyPlayerInput(string sessionId, float moveX, float moveY)
         {
             PlayerSession session;
@@ -163,6 +205,7 @@ namespace IslaTortuga.Server.Core.Embedded
 
         public IReadOnlyList<EmbeddedGameServerTickResult> Tick()
         {
+            FlushDisconnectedConnections();
             _gameRoomManager.TickAll(TickDeltaSeconds);
             return BuildSnapshots();
         }
@@ -190,7 +233,10 @@ namespace IslaTortuga.Server.Core.Embedded
 
         public void MarkDisconnected(string connectionId)
         {
-            _sessionManager.MarkDisconnected(connectionId);
+            if (!string.IsNullOrWhiteSpace(connectionId))
+            {
+                _pendingDisconnectedConnectionIds.Enqueue(connectionId);
+            }
         }
 
         private EmbeddedGameServerJoinResult BuildJoinResult(RoomPlayer roomPlayer)
@@ -203,6 +249,18 @@ namespace IslaTortuga.Server.Core.Embedded
                     roomPlayer.Room.RoomId,
                     roomPlayer.PlayerEntity.EntityId),
                 _snapshotBuilder.Build(roomPlayer.Room, roomPlayer));
+        }
+
+        private void FlushDisconnectedConnections()
+        {
+            while (_pendingDisconnectedConnectionIds.TryDequeue(out var connectionId))
+            {
+                var disconnectedSession = _sessionManager.MarkDisconnected(connectionId);
+                if (disconnectedSession != null)
+                {
+                    _gameRoomManager.HandleSessionDisconnected(disconnectedSession);
+                }
+            }
         }
     }
 }

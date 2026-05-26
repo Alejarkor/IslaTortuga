@@ -17,6 +17,7 @@ namespace IslaTortuga.Server.Core.Sessions
             string signedTicket,
             string userId,
             string displayName,
+            string visualId,
             TicketPurpose purpose,
             string previousSessionId,
             DateTimeOffset expiresAt)
@@ -24,6 +25,7 @@ namespace IslaTortuga.Server.Core.Sessions
             SignedTicket = signedTicket;
             UserId = userId;
             DisplayName = displayName;
+            VisualId = visualId ?? string.Empty;
             Purpose = purpose;
             PreviousSessionId = previousSessionId;
             ExpiresAt = expiresAt;
@@ -35,6 +37,8 @@ namespace IslaTortuga.Server.Core.Sessions
 
         public string DisplayName { get; }
 
+        public string VisualId { get; }
+
         public TicketPurpose Purpose { get; }
 
         public string PreviousSessionId { get; }
@@ -44,11 +48,12 @@ namespace IslaTortuga.Server.Core.Sessions
 
     public sealed class PlayerSession
     {
-        public PlayerSession(string sessionId, string userId, string displayName)
+        public PlayerSession(string sessionId, string userId, string displayName, string visualId)
         {
             SessionId = sessionId;
             UserId = userId;
             DisplayName = displayName;
+            VisualId = visualId ?? string.Empty;
             CreatedAt = DateTimeOffset.UtcNow;
             LastSeenAt = CreatedAt;
         }
@@ -58,6 +63,8 @@ namespace IslaTortuga.Server.Core.Sessions
         public string UserId { get; }
 
         public string DisplayName { get; }
+
+        public string VisualId { get; }
 
         public string ConnectionId { get; private set; }
 
@@ -103,7 +110,8 @@ namespace IslaTortuga.Server.Core.Sessions
             var session = new PlayerSession(
                 Guid.NewGuid().ToString("N"),
                 ticket.UserId,
-                ticket.DisplayName);
+                ticket.DisplayName,
+                ticket.VisualId);
 
             session.AttachConnection(connectionId);
             _sessions[session.SessionId] = session;
@@ -136,19 +144,22 @@ namespace IslaTortuga.Server.Core.Sessions
             get { return _sessions.Count; }
         }
 
-        public void MarkDisconnected(string connectionId)
+        public PlayerSession MarkDisconnected(string connectionId)
         {
             string sessionId;
             if (!_sessionIdsByConnection.TryRemove(connectionId, out sessionId))
             {
-                return;
+                return null;
             }
 
             PlayerSession session;
             if (_sessions.TryGetValue(sessionId, out session))
             {
                 session.MarkDisconnected();
+                return session;
             }
+
+            return null;
         }
     }
 
@@ -165,14 +176,14 @@ namespace IslaTortuga.Server.Core.Sessions
                 : ticketSecret;
         }
 
-        public GameTicket CreateJoinTicket(string userId, string displayName)
+        public GameTicket CreateJoinTicket(string userId, string displayName, string visualId)
         {
-            return CreateSignedTicket(userId, displayName, TicketPurpose.Join, null);
+            return CreateSignedTicket(userId, displayName, visualId, TicketPurpose.Join, null);
         }
 
-        public GameTicket CreateReconnectTicket(string userId, string displayName, string previousSessionId)
+        public GameTicket CreateReconnectTicket(string userId, string displayName, string visualId, string previousSessionId)
         {
-            return CreateSignedTicket(userId, displayName, TicketPurpose.Reconnect, previousSessionId);
+            return CreateSignedTicket(userId, displayName, visualId, TicketPurpose.Reconnect, previousSessionId);
         }
 
         public bool TryConsume(
@@ -212,6 +223,7 @@ namespace IslaTortuga.Server.Core.Sessions
                 signedTicket,
                 payload.UserId,
                 payload.DisplayName,
+                payload.VisualId,
                 expectedPurpose,
                 payload.PreviousSessionId,
                 DateTimeOffset.FromUnixTimeMilliseconds(payload.ExpiresAt));
@@ -222,6 +234,7 @@ namespace IslaTortuga.Server.Core.Sessions
         private GameTicket CreateSignedTicket(
             string userId,
             string displayName,
+            string visualId,
             TicketPurpose purpose,
             string previousSessionId)
         {
@@ -229,6 +242,7 @@ namespace IslaTortuga.Server.Core.Sessions
                 Guid.NewGuid().ToString("N"),
                 userId,
                 displayName,
+                visualId,
                 ToPurposeValue(purpose),
                 previousSessionId,
                 DateTimeOffset.UtcNow.Add(TicketLifetime).ToUnixTimeMilliseconds());
@@ -242,6 +256,7 @@ namespace IslaTortuga.Server.Core.Sessions
                 signedTicket,
                 userId,
                 displayName,
+                visualId,
                 purpose,
                 previousSessionId,
                 DateTimeOffset.FromUnixTimeMilliseconds(payload.ExpiresAt));
@@ -292,6 +307,7 @@ namespace IslaTortuga.Server.Core.Sessions
                 + "\"ticketId\":\"" + EscapeJson(payload.TicketId) + "\","
                 + "\"userId\":\"" + EscapeJson(payload.UserId) + "\","
                 + "\"displayName\":\"" + EscapeJson(payload.DisplayName) + "\","
+                + "\"visualId\":\"" + EscapeJson(payload.VisualId) + "\","
                 + "\"purpose\":\"" + EscapeJson(payload.Purpose) + "\","
                 + "\"previousSessionId\":" + ToJsonStringOrNull(payload.PreviousSessionId) + ","
                 + "\"expiresAt\":" + payload.ExpiresAt
@@ -345,6 +361,7 @@ namespace IslaTortuga.Server.Core.Sessions
                 string ticketId,
                 string userId,
                 string displayName,
+                string visualId,
                 string purpose,
                 string previousSessionId,
                 long expiresAt)
@@ -352,6 +369,7 @@ namespace IslaTortuga.Server.Core.Sessions
                 this.ticketId = ticketId;
                 this.userId = userId;
                 this.displayName = displayName;
+                this.visualId = visualId;
                 this.purpose = purpose;
                 this.previousSessionId = previousSessionId;
                 this.expiresAt = expiresAt;
@@ -360,6 +378,7 @@ namespace IslaTortuga.Server.Core.Sessions
             public string ticketId;
             public string userId;
             public string displayName;
+            public string visualId;
             public string purpose;
             public string previousSessionId;
             public long expiresAt;
@@ -367,6 +386,7 @@ namespace IslaTortuga.Server.Core.Sessions
             public string TicketId { get { return ticketId; } }
             public string UserId { get { return userId; } }
             public string DisplayName { get { return displayName; } }
+            public string VisualId { get { return visualId; } }
             public string Purpose { get { return purpose; } }
             public string PreviousSessionId { get { return previousSessionId; } }
             public long ExpiresAt { get { return expiresAt; } }

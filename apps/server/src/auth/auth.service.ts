@@ -9,6 +9,8 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { PasswordService } from './password.service';
 
+const DEFAULT_PLAYER_VISUAL_ID = 'player.default';
+
 type AuthUser = {
   id: string;
   email: string;
@@ -16,6 +18,7 @@ type AuthUser = {
     id: string;
     nickname: string;
     avatarId: string | null;
+    playerVisualId: string;
   } | null;
 };
 
@@ -64,6 +67,7 @@ export class AuthService {
         profile: {
           create: {
             nickname,
+            playerVisualId: DEFAULT_PLAYER_VISUAL_ID,
           },
         },
       },
@@ -157,6 +161,7 @@ export class AuthService {
             id: user.profile.id,
             nickname: user.profile.nickname,
             avatarId: user.profile.avatarId,
+            playerVisualId: user.profile.playerVisualId,
           }
         : null,
     };

@@ -66,8 +66,25 @@ Ese componente:
 2. Busca `content-packs` en el repo o en `StreamingAssets`
 3. Localiza el mapa `.tmj`
 4. Crea `EmbeddedGameServerHost`
-5. Ejecuta el tick del servidor en `FixedUpdate`
-6. Muestra un overlay simple con estado del bootstrap
+5. Opcionalmente arranca un gateway HTTP/WebSocket local dentro de Unity
+6. Ejecuta el tick del servidor en `FixedUpdate`
+7. Reenvia snapshots del runtime embebido a las conexiones WebSocket
+8. Muestra un overlay simple con estado del bootstrap y endpoints expuestos
+
+## Networking ya migrado a Unity
+
+La capa de networking del game server ahora puede vivir dentro del proyecto Unity en:
+
+- [Assets/Scripts/Networking/EmbeddedServerNetworkingHost.cs](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scripts/Networking/EmbeddedServerNetworkingHost.cs)
+- [Assets/Scripts/Networking/Protocol/Protocol.cs](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scripts/Networking/Protocol/Protocol.cs)
+
+Ese gateway embebido expone:
+
+- `GET /health`
+- `GET /content/...` contra `content-packs` cuando esta activado
+- `WS /ws/game` con el mismo contrato de `auth.join`, `auth.reconnect`, `player.input`, `ping` y `world.snapshot`
+
+Con esto el flujo autoritativo de simulacion y el transporte WebSocket dejan de depender del host ASP.NET Core para correr en desarrollo dentro de Unity.
 
 Ejemplo orientativo del mismo patron:
 
@@ -105,10 +122,7 @@ public sealed class ServerBootstrapBehaviour : MonoBehaviour
    - `StreamingAssets`
    - `Addressables`
    - pipeline propio de importacion
-2. Elegir el transporte dentro de Unity:
-   - solo local/in-process
-   - WebSocket interno
-   - Unity Transport / Netcode adapter
+2. Decidir si el transporte final se queda en este gateway WebSocket o se sustituye por un adapter de Unity Transport / Netcode.
 3. Sustituir el cliente web Babylon por cliente Unity.
 4. Reutilizar o reemplazar la API Nest para login y persistencia.
 5. Eliminar la duplicacion temporal entre `src/IslaTortuga.Server.Core` y `Assets/Scripts/ServerCore` empaquetando el core como package o ensamblado estable para Unity.

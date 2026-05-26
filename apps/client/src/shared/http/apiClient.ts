@@ -15,6 +15,7 @@ export type UserDto = {
     id: string;
     nickname: string;
     avatarId: string | null;
+    playerVisualId: string;
   } | null;
 };
 
@@ -32,6 +33,9 @@ export type StartGameResponse = {
   mapId: string;
   manifestUrl: string;
   webSocketUrl: string;
+  localPlayerAppearance: {
+    visualId: string;
+  };
 };
 
 export async function request<TResponse>(

@@ -53,7 +53,8 @@ namespace IslaTortuga.Server.Core.Protocol
             float x,
             float y,
             string facing,
-            string displayName)
+            string displayName,
+            string visualId)
         {
             EntityId = entityId;
             EntityType = entityType;
@@ -61,6 +62,7 @@ namespace IslaTortuga.Server.Core.Protocol
             Y = y;
             Facing = facing;
             DisplayName = displayName;
+            VisualId = visualId;
         }
 
         public string EntityId { get; }
@@ -74,6 +76,8 @@ namespace IslaTortuga.Server.Core.Protocol
         public string Facing { get; }
 
         public string DisplayName { get; }
+
+        public string VisualId { get; }
     }
 
     public sealed class WorldSnapshotPayload

@@ -22,6 +22,7 @@ model Profile {
   userId    String   @unique
   nickname  String   @unique
   avatarId  String?
+  playerVisualId String @default("player.default")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -30,6 +30,7 @@ export type EntityStatePayload = {
   y: number;
   facing: 'up' | 'down' | 'left' | 'right' | string;
   displayName?: string | null;
+  visualId?: string | null;
 };
 
 export type WorldSnapshotPayload = {

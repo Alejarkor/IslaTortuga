@@ -27,7 +27,8 @@ namespace IslaTortuga.Server.Core.Replication
                     player.X,
                     player.Y,
                     player.Facing,
-                    player.DisplayName);
+                    player.DisplayName,
+                    player.VisualId);
             }
 
             return new EntityStatePayload(
@@ -36,6 +37,7 @@ namespace IslaTortuga.Server.Core.Replication
                 entity.X,
                 entity.Y,
                 "down",
+                null,
                 null);
         }
     }

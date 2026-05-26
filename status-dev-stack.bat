@@ -11,8 +11,11 @@ echo.
 
 call :show_port 3000 "API Nest"
 call :show_port 5173 "Cliente Vite"
-call :show_port 5055 "Game Server"
 call :show_port 5432 "PostgreSQL"
+
+echo.
+echo El game server de Unity se arranca manualmente desde el editor.
+call :show_port 5055 "Unity Server (manual)"
 
 echo.
 pause

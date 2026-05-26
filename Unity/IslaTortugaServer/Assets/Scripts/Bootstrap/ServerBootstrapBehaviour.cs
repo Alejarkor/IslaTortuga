@@ -1,6 +1,9 @@
 using System;
 using System.IO;
+using System.Linq;
 using IslaTortuga.Server.Core.Embedded;
+using IslaTortuga.Server.Core.World;
+using IslaTortuga.Unity.Networking;
 using UnityEngine;
 
 namespace IslaTortuga.Unity.Bootstrap
@@ -11,8 +14,22 @@ namespace IslaTortuga.Unity.Bootstrap
         private const string DefaultRoomId = "room.default";
         private const string DefaultWorldId = "world.default";
         private const string DefaultPreferredMap = "island_01.tmj";
+        private const float DefaultServerTickRateHz = 20f;
+
+        [Header("Network Gateway")]
+        [SerializeField] private bool enableNetworkGateway = true;
+        [SerializeField] private string listenHost = "127.0.0.1";
+        [SerializeField] private int listenPort = 5055;
+        [SerializeField] private bool serveContentOverHttp = true;
+
+        [Header("Spawn Policy")]
+        [SerializeField] private bool despawnDisconnectedPlayers = true;
+        [SerializeField] private NetworkEntityDefinitionAsset playerEntityDefinition;
+        [SerializeField] private NetworkEntityDefinitionAsset[] entityDefinitions = Array.Empty<NetworkEntityDefinitionAsset>();
 
         private EmbeddedGameServerHost _server;
+        private EmbeddedServerNetworkingHost _networkGateway;
+        private ServerTickRunner _tickRunner;
         private Exception _startupException;
         private string _contentRoot = string.Empty;
         private string _mapPath = string.Empty;
@@ -30,20 +47,20 @@ namespace IslaTortuga.Unity.Bootstrap
             BootstrapServer();
         }
 
-        private void FixedUpdate()
+        private void Update()
         {
-            if (_server == null)
+            if (_server == null || _tickRunner == null)
             {
                 return;
             }
 
-            _server.Tick();
+            _tickRunner.Advance(Time.unscaledDeltaTime, RunServerTick);
         }
 
         private void OnGUI()
         {
             GUI.color = _startupException == null ? Color.white : new Color(1f, 0.65f, 0.65f, 1f);
-            GUILayout.BeginArea(new Rect(16f, 16f, 520f, 180f), "Isla Tortuga Bootstrap", GUI.skin.window);
+            GUILayout.BeginArea(new Rect(16f, 16f, 560f, 230f), "Isla Tortuga Bootstrap", GUI.skin.window);
             GUILayout.Label(_statusMessage);
 
             if (_server != null)
@@ -52,7 +69,21 @@ namespace IslaTortuga.Unity.Bootstrap
                 GUILayout.Label("Map Path: " + _mapPath);
                 GUILayout.Label("Content Root: " + _contentRoot);
                 GUILayout.Label("Rooms: " + _server.RoomCount + " | Sessions: " + _server.SessionCount + " | Players: " + _server.PlayerCount);
-                GUILayout.Label("Tick: " + _server.CurrentTick);
+                GUILayout.Label("Tick: " + _server.CurrentTick + " @ " + DefaultServerTickRateHz + " Hz");
+                GUILayout.Label("Despawn Disconnected Players: " + (despawnDisconnectedPlayers ? "Yes" : "No"));
+                GUILayout.Label("Player Entity Type: " + ResolvePlayerEntityTypeLabel());
+
+                if (_networkGateway != null)
+                {
+                    GUILayout.Space(4f);
+                    GUILayout.Label("HTTP: " + _networkGateway.BaseHttpUrl + "/health");
+                    GUILayout.Label("WebSocket: " + _networkGateway.WebSocketUrl);
+
+                    if (serveContentOverHttp)
+                    {
+                        GUILayout.Label("Content: " + _networkGateway.BaseHttpUrl + "/content/");
+                    }
+                }
             }
 
             if (_startupException != null)
@@ -62,6 +93,16 @@ namespace IslaTortuga.Unity.Bootstrap
             }
 
             GUILayout.EndArea();
+        }
+
+        private void OnDestroy()
+        {
+            ShutdownGateway();
+        }
+
+        private void OnApplicationQuit()
+        {
+            ShutdownGateway();
         }
 
         private void BootstrapServer()
@@ -76,11 +117,28 @@ namespace IslaTortuga.Unity.Bootstrap
                     DefaultMapPath = _mapPath,
                     DefaultRoomId = DefaultRoomId,
                     DefaultWorldId = DefaultWorldId,
-                    TickDeltaSeconds = Time.fixedDeltaTime,
+                    TickDeltaSeconds = 1f / DefaultServerTickRateHz,
                     TicketSecret = Environment.GetEnvironmentVariable("GAME_TICKET_SECRET"),
+                    DespawnDisconnectedPlayers = despawnDisconnectedPlayers,
+                    PlayerDefinition = BuildPlayerDefinition(),
+                    PrefabDefinitions = BuildEntityDefinitions(),
                 });
+                _tickRunner = new ServerTickRunner(DefaultServerTickRateHz);
 
-                _statusMessage = "Embedded server running inside Unity.";
+                if (enableNetworkGateway)
+                {
+                    _networkGateway = new EmbeddedServerNetworkingHost(
+                        _server,
+                        _contentRoot,
+                        listenHost,
+                        listenPort,
+                        serveContentOverHttp);
+                    _networkGateway.Start();
+                }
+
+                _statusMessage = _networkGateway == null
+                    ? "Embedded server running inside Unity."
+                    : "Embedded server and networking gateway running inside Unity.";
                 Debug.Log("[IslaTortuga] Embedded server bootstrapped using map: " + _mapPath);
             }
             catch (Exception exception)
@@ -135,6 +193,114 @@ namespace IslaTortuga.Unity.Bootstrap
             }
 
             throw new FileNotFoundException("No se encontro ningun mapa .tmj para el bootstrap del servidor.", contentRoot);
+        }
+
+        private void ShutdownGateway()
+        {
+            if (_networkGateway == null)
+            {
+                return;
+            }
+
+            _networkGateway.Dispose();
+            _networkGateway = null;
+        }
+
+        private void RunServerTick()
+        {
+            if (_networkGateway != null)
+            {
+                _networkGateway.PumpInboundMessages();
+            }
+
+            var snapshots = _server.Tick();
+
+            if (_networkGateway != null)
+            {
+                _networkGateway.BroadcastSnapshots(snapshots);
+            }
+        }
+
+        private NetworkEntityPrefabDefinition[] BuildEntityDefinitions()
+        {
+            if (entityDefinitions == null || entityDefinitions.Length == 0)
+            {
+                return Array.Empty<NetworkEntityPrefabDefinition>();
+            }
+
+            return entityDefinitions
+                .Where(definition => definition != null && !string.IsNullOrWhiteSpace(definition.EntityType))
+                .Select(definition => new NetworkEntityPrefabDefinition
+                {
+                    EntityType = definition.EntityType,
+                    Prefab = definition.Prefab,
+                })
+                .GroupBy(definition => definition.EntityType, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.Last())
+                .ToArray();
+        }
+
+        private NetworkEntityPrefabDefinition BuildPlayerDefinition()
+        {
+            if (playerEntityDefinition == null || string.IsNullOrWhiteSpace(playerEntityDefinition.EntityType))
+            {
+                throw new InvalidOperationException("Player Entity Definition must be assigned in Server Bootstrap.");
+            }
+
+            return new NetworkEntityPrefabDefinition
+            {
+                EntityType = playerEntityDefinition.EntityType,
+                Prefab = playerEntityDefinition.Prefab,
+            };
+        }
+
+        private string ResolvePlayerEntityTypeLabel()
+        {
+            return playerEntityDefinition == null || string.IsNullOrWhiteSpace(playerEntityDefinition.EntityType)
+                ? "Not configured"
+                : playerEntityDefinition.EntityType;
+        }
+    }
+
+    internal sealed class ServerTickRunner
+    {
+        private readonly float _tickIntervalSeconds;
+        private readonly int _maxTicksPerFrame;
+        private float _accumulatorSeconds;
+
+        public ServerTickRunner(float tickRateHz, int maxTicksPerFrame = 5)
+        {
+            TickRateHz = tickRateHz <= 0f ? 20f : tickRateHz;
+            _tickIntervalSeconds = 1f / TickRateHz;
+            _maxTicksPerFrame = maxTicksPerFrame < 1 ? 1 : maxTicksPerFrame;
+        }
+
+        public float TickRateHz { get; }
+
+        public int Advance(float deltaTimeSeconds, Action tickAction)
+        {
+            if (tickAction == null)
+            {
+                throw new ArgumentNullException(nameof(tickAction));
+            }
+
+            _accumulatorSeconds += Math.Max(0f, deltaTimeSeconds);
+
+            var executedThisFrame = 0;
+            while (_accumulatorSeconds >= _tickIntervalSeconds && executedThisFrame < _maxTicksPerFrame)
+            {
+                _accumulatorSeconds -= _tickIntervalSeconds;
+                tickAction();
+                executedThisFrame++;
+            }
+
+            var maxBufferedSeconds = _tickIntervalSeconds * _maxTicksPerFrame;
+            if (_accumulatorSeconds > maxBufferedSeconds)
+            {
+                _accumulatorSeconds = maxBufferedSeconds;
+            }
+
+            return executedThisFrame;
         }
     }
 }

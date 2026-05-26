@@ -43,6 +43,22 @@
   },
   "players": {
     "default": {
+      "visualId": "player.default",
+      "textureKey": "player",
+      "imageFileId": "spritesheet.player",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "animations": {
+        "idleDown": "player-idle-down",
+        "idleUp": "player-idle-up",
+        "idleSide": "player-idle-side",
+        "walkDown": "player-walk-down",
+        "walkUp": "player-walk-up",
+        "walkSide": "player-walk-side"
+      }
+    },
+    "player.default": {
+      "visualId": "player.default",
       "textureKey": "player",
       "imageFileId": "spritesheet.player",
       "frameWidth": 32,

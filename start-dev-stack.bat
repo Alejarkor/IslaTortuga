@@ -39,14 +39,6 @@ if errorlevel 1 (
   exit /b 1
 )
 
-where dotnet >nul 2>nul
-if errorlevel 1 (
-  echo [ERROR] dotnet no esta disponible en PATH.
-  echo.
-  pause
-  exit /b 1
-)
-
 where docker >nul 2>nul
 if errorlevel 1 (
   echo [ERROR] docker no esta disponible en PATH.
@@ -61,7 +53,7 @@ if errorlevel 1 (
   if errorlevel 1 exit /b 1
 )
 
-echo [1/4] Levantando PostgreSQL con docker compose...
+echo [1/3] Levantando PostgreSQL con docker compose...
 docker compose up -d postgres
 if errorlevel 1 (
   echo.
@@ -72,22 +64,23 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [2/4] Comprobando API Nest...
+echo [2/3] Comprobando API Nest...
 call :launch_if_needed 3000 "API Nest" "IslaTortuga API" "pnpm run dev:api"
 
-echo [3/4] Comprobando cliente Vite...
+echo [3/3] Comprobando cliente Vite...
 call :launch_if_needed 5173 "Cliente Vite" "IslaTortuga Client" "pnpm run dev:client"
-
-echo [4/4] Comprobando game server C#...
-call :launch_if_needed 5055 "Game Server" "IslaTortuga Game Server" "dotnet run --project .\src\IslaTortuga.Server\IslaTortuga.Server.csproj"
 
 echo.
 echo Stack lanzado.
 echo.
 echo Comprueba estas URLs:
 echo - API:         http://localhost:3000/health
-echo - Game Server: http://localhost:5055/health
 echo - Cliente:     http://localhost:5173
+echo.
+echo El game server ahora no se lanza desde este script.
+echo Levantalo manualmente desde Unity Editor con la escena del server abierta.
+echo Si Unity escucha en 5055, puedes comprobarlo en:
+echo - Unity Server: http://localhost:5055/health
 echo.
 echo Para ver el estado actual usa status-dev-stack.bat
 echo Para parar el stack usa stop-dev-stack.bat

@@ -32,7 +32,8 @@ namespace IslaTortuga.Server.Core.Rooms
 
     public sealed class GameRoom
     {
-        private readonly Dictionary<string, RoomPlayer> _players = new Dictionary<string, RoomPlayer>();
+        private readonly Dictionary<string, RoomPlayer> _playersBySessionId = new Dictionary<string, RoomPlayer>();
+        private readonly Dictionary<string, string> _activeSessionIdByUserId = new Dictionary<string, string>();
         private readonly object _sync = new object();
 
         public GameRoom(string roomId, GameWorld world)
@@ -54,7 +55,7 @@ namespace IslaTortuga.Server.Core.Rooms
             {
                 lock (_sync)
                 {
-                    return _players.Values.ToArray();
+                    return _playersBySessionId.Values.ToArray();
                 }
             }
         }
@@ -64,26 +65,57 @@ namespace IslaTortuga.Server.Core.Rooms
             lock (_sync)
             {
                 RoomPlayer existingPlayer;
-                if (_players.TryGetValue(session.SessionId, out existingPlayer))
+                if (_playersBySessionId.TryGetValue(session.SessionId, out existingPlayer))
                 {
                     return existingPlayer;
                 }
 
-                var spawn = World.GetNextSpawnPoint();
-                var playerEntity = new PlayerEntity(
-                    "player_" + session.UserId,
-                    session.UserId,
-                    session.DisplayName,
-                    spawn.X,
-                    spawn.Y);
+                if (_activeSessionIdByUserId.TryGetValue(session.UserId, out var previousSessionId) &&
+                    !string.IsNullOrWhiteSpace(previousSessionId) &&
+                    previousSessionId != session.SessionId)
+                {
+                    _playersBySessionId.Remove(previousSessionId);
+                }
 
-                World.Entities.Add(playerEntity);
+                var playerEntity = World.Spawner.GetOrSpawnPlayer(session, RoomId, World.GetNextSpawnPoint);
                 session.BindToRoom(RoomId, playerEntity.EntityId);
 
                 var roomPlayer = new RoomPlayer(this, session, playerEntity);
-                _players[session.SessionId] = roomPlayer;
+                _playersBySessionId[session.SessionId] = roomPlayer;
+                _activeSessionIdByUserId[session.UserId] = session.SessionId;
                 return roomPlayer;
             }
+        }
+
+        public void HandleSessionDisconnected(PlayerSession session, bool despawnDisconnectedPlayers)
+        {
+            lock (_sync)
+            {
+                if (session == null)
+                {
+                    return;
+                }
+
+                _playersBySessionId.Remove(session.SessionId);
+
+                if (_activeSessionIdByUserId.TryGetValue(session.UserId, out var activeSessionId) &&
+                    activeSessionId == session.SessionId)
+                {
+                    _activeSessionIdByUserId.Remove(session.UserId);
+                }
+
+                World.Spawner.HandlePlayerDisconnected(session, despawnDisconnectedPlayers);
+            }
+        }
+
+        public T SpawnEntity<T>(
+            string entityType,
+            string entityId,
+            Action<UnityEngine.GameObject> configureObject,
+            Action<T> initializeEntity)
+            where T : NetworkEntity
+        {
+            return World.Spawner.SpawnEntity(entityType, entityId, configureObject, initializeEntity);
         }
 
         public void Tick(float deltaSeconds)
@@ -99,12 +131,19 @@ namespace IslaTortuga.Server.Core.Rooms
         public string DefaultRoomId { get; set; } = "room.default";
 
         public string DefaultWorldId { get; set; } = "world.default";
+
+        public bool DespawnDisconnectedPlayers { get; set; } = true;
+
+        public NetworkEntityPrefabDefinition PlayerDefinition { get; set; }
+
+        public IReadOnlyList<NetworkEntityPrefabDefinition> PrefabDefinitions { get; set; } = Array.Empty<NetworkEntityPrefabDefinition>();
     }
 
     public sealed class GameRoomManager
     {
         private readonly Dictionary<string, GameRoom> _rooms = new Dictionary<string, GameRoom>();
         private readonly object _sync = new object();
+        private readonly GameRoomManagerOptions _options;
 
         public GameRoomManager(GameRoomManagerOptions options, TiledWorldBuilder tiledWorldBuilder)
         {
@@ -114,11 +153,19 @@ namespace IslaTortuga.Server.Core.Rooms
             }
 
             var tiledMap = tiledWorldBuilder.BuildFromFile(options.DefaultMapPath);
-            var world = new GameWorld(options.DefaultWorldId, tiledMap);
+            var world = new GameWorld(
+                options.DefaultWorldId,
+                tiledMap,
+                new ServerNetworkSpawnerOptions
+                {
+                    PlayerDefinition = options.PlayerDefinition,
+                    PrefabDefinitions = options.PrefabDefinitions,
+                });
             var room = new GameRoom(options.DefaultRoomId, world);
 
             _rooms[room.RoomId] = room;
             DefaultRoom = room;
+            _options = options;
         }
 
         public GameRoom DefaultRoom { get; }
@@ -143,6 +190,27 @@ namespace IslaTortuga.Server.Core.Rooms
                 }
 
                 return DefaultRoom.AddOrGetPlayer(session);
+            }
+        }
+
+        public void HandleSessionDisconnected(PlayerSession session)
+        {
+            if (session == null)
+            {
+                return;
+            }
+
+            lock (_sync)
+            {
+                GameRoom room;
+                if (!string.IsNullOrWhiteSpace(session.RoomId) &&
+                    _rooms.TryGetValue(session.RoomId, out room))
+                {
+                    room.HandleSessionDisconnected(session, _options.DespawnDisconnectedPlayers);
+                    return;
+                }
+
+                DefaultRoom.HandleSessionDisconnected(session, _options.DespawnDisconnectedPlayers);
             }
         }
 
