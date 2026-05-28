@@ -72,6 +72,10 @@ namespace IslaTortuga.Server.Core.Sessions
 
         public string PlayerEntityId { get; private set; }
 
+        public string SceneId { get; private set; } = string.Empty;
+
+        public string SceneInstanceId { get; private set; } = string.Empty;
+
         public DateTimeOffset CreatedAt { get; }
 
         public DateTimeOffset LastSeenAt { get; private set; }
@@ -89,6 +93,13 @@ namespace IslaTortuga.Server.Core.Sessions
         {
             RoomId = roomId;
             PlayerEntityId = playerEntityId;
+            LastSeenAt = DateTimeOffset.UtcNow;
+        }
+
+        public void BindSceneContext(string sceneId, string sceneInstanceId)
+        {
+            SceneId = sceneId ?? string.Empty;
+            SceneInstanceId = sceneInstanceId ?? string.Empty;
             LastSeenAt = DateTimeOffset.UtcNow;
         }
 

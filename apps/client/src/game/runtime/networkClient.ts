@@ -17,26 +17,45 @@ export type AuthAcceptedPayload = {
   playerEntityId: string;
 };
 
+export type SceneContextPayload = {
+  sceneId: string;
+  sceneInstanceId: string;
+};
+
 export type ErrorPayload = {
   code: string;
   message: string;
   retryable?: boolean;
 };
 
-export type EntityStatePayload = {
+export type EntitySpawnPayload = {
   entityId: string;
   entityType: string;
+  archetypeId?: string | null;
+  visualId?: string | null;
   x: number;
   y: number;
   facing: 'up' | 'down' | 'left' | 'right' | string;
   displayName?: string | null;
-  visualId?: string | null;
 };
 
-export type WorldSnapshotPayload = {
+export type EntityUpdatePayload = {
+  entityId: string;
+  x: number;
+  y: number;
+  facing?: 'up' | 'down' | 'left' | 'right' | string | null;
+};
+
+export type EntityDespawnPayload = {
+  entityId: string;
+};
+
+export type WorldDeltaPayload = {
   serverTick: number;
   roomId: string;
-  entities: EntityStatePayload[];
+  spawns: EntitySpawnPayload[];
+  updates: EntityUpdatePayload[];
+  despawns: EntityDespawnPayload[];
 };
 
 export type PlayerInputPayload = {
@@ -47,7 +66,9 @@ export type PlayerInputPayload = {
 
 type EventHandlers = {
   onAuthAccepted?: (payload: AuthAcceptedPayload) => void;
-  onSnapshot?: (payload: WorldSnapshotPayload) => void;
+  onSceneBootstrap?: (payload: SceneContextPayload) => void;
+  onSceneChange?: (payload: SceneContextPayload) => void;
+  onWorldDelta?: (payload: WorldDeltaPayload) => void;
   onError?: (payload: ErrorPayload) => void;
   onClose?: () => void;
 };
@@ -66,8 +87,18 @@ export class GameNetworkClient {
         return;
       }
 
-      if (envelope.op === 'world.snapshot') {
-        handlers.onSnapshot?.(envelope.payload as WorldSnapshotPayload);
+      if (envelope.op === 'scene.bootstrap') {
+        handlers.onSceneBootstrap?.(envelope.payload as SceneContextPayload);
+        return;
+      }
+
+      if (envelope.op === 'scene.change') {
+        handlers.onSceneChange?.(envelope.payload as SceneContextPayload);
+        return;
+      }
+
+      if (envelope.op === 'world.delta') {
+        handlers.onWorldDelta?.(envelope.payload as WorldDeltaPayload);
         return;
       }
 

@@ -9,7 +9,11 @@ namespace IslaTortuga.Server.Core.World
     {
         private string _entityId = string.Empty;
         private string _entityType = string.Empty;
+        private string _archetypeId = string.Empty;
+        private string _visualId = string.Empty;
         private string _roomId = string.Empty;
+        private string _sceneId = string.Empty;
+        private string _sceneInstanceId = string.Empty;
 
         public string EntityId
         {
@@ -26,17 +30,47 @@ namespace IslaTortuga.Server.Core.World
             get { return _roomId; }
         }
 
+        public string ArchetypeId
+        {
+            get { return _archetypeId; }
+        }
+
+        public string SceneId
+        {
+            get { return _sceneId; }
+        }
+
+        public string SceneInstanceId
+        {
+            get { return _sceneInstanceId; }
+        }
+
+        public string VisualId
+        {
+            get { return _visualId; }
+        }
+
         public float X
         {
-            get { return transform.position.x; }
+            get { return transform.localPosition.x; }
         }
 
         public float Y
         {
-            get { return transform.position.z; }
+            get { return transform.localPosition.z; }
         }
 
-        protected void InitializeEntity(string entityId, string entityType, string roomId, float x, float y)
+        protected void InitializeEntity(
+            string entityId,
+            string entityType,
+            string archetypeId,
+            string visualId,
+            string roomId,
+            string sceneId,
+            string sceneInstanceId,
+            Transform sceneEntityRoot,
+            float x,
+            float y)
         {
             if (string.IsNullOrWhiteSpace(entityId))
             {
@@ -50,9 +84,29 @@ namespace IslaTortuga.Server.Core.World
 
             _entityId = entityId;
             _entityType = entityType;
+            _archetypeId = archetypeId ?? string.Empty;
+            _visualId = visualId ?? string.Empty;
             _roomId = roomId ?? string.Empty;
-            transform.position = new Vector3(x, 0f, y);
+            SetSceneContext(sceneId, sceneInstanceId, sceneEntityRoot, x, y);
             gameObject.name = entityType + ":" + entityId;
+        }
+
+        protected void SetSceneContext(
+            string sceneId,
+            string sceneInstanceId,
+            Transform sceneEntityRoot,
+            float x,
+            float y)
+        {
+            _sceneId = sceneId ?? string.Empty;
+            _sceneInstanceId = sceneInstanceId ?? string.Empty;
+
+            if (sceneEntityRoot != null && transform.parent != sceneEntityRoot)
+            {
+                transform.SetParent(sceneEntityRoot, false);
+            }
+
+            transform.localPosition = new Vector3(x, 0f, y);
         }
 
         public abstract void ServerTick(float deltaSeconds);
@@ -69,8 +123,6 @@ namespace IslaTortuga.Server.Core.World
 
         public string DisplayName { get; private set; } = string.Empty;
 
-        public string VisualId { get; private set; } = string.Empty;
-
         public string Facing { get; private set; } = "down";
 
         public string SessionId { get; private set; } = string.Empty;
@@ -82,12 +134,57 @@ namespace IslaTortuga.Server.Core.World
             _characterController = GetComponent<CharacterController>();
         }
 
-        public void Initialize(string entityId, string entityType, string roomId, string userId, string displayName, string visualId, float x, float y)
+        public void Initialize(
+            string entityId,
+            string entityType,
+            string archetypeId,
+            string roomId,
+            string sceneId,
+            string sceneInstanceId,
+            Transform sceneEntityRoot,
+            string userId,
+            string displayName,
+            string visualId,
+            float x,
+            float y)
         {
-            InitializeEntity(entityId, entityType, roomId, x, y);
+            InitializeEntity(
+                entityId,
+                entityType,
+                archetypeId,
+                visualId,
+                roomId,
+                sceneId,
+                sceneInstanceId,
+                sceneEntityRoot,
+                x,
+                y);
             UserId = userId ?? string.Empty;
             DisplayName = displayName ?? string.Empty;
-            VisualId = visualId ?? string.Empty;
+        }
+
+        public void RelocateToScene(
+            string sceneId,
+            string sceneInstanceId,
+            Transform sceneEntityRoot,
+            float x,
+            float y)
+        {
+            var wasControllerEnabled = _characterController != null && _characterController.enabled;
+            if (wasControllerEnabled)
+            {
+                _characterController.enabled = false;
+            }
+
+            SetSceneContext(sceneId, sceneInstanceId, sceneEntityRoot, x, y);
+
+            if (wasControllerEnabled)
+            {
+                _characterController.enabled = true;
+            }
+
+            _moveX = 0f;
+            _moveY = 0f;
         }
 
         public void AttachSession(string sessionId)

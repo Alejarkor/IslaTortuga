@@ -77,8 +77,10 @@ namespace IslaTortuga.Server.Core.Rooms
                     _playersBySessionId.Remove(previousSessionId);
                 }
 
-                var playerEntity = World.Spawner.GetOrSpawnPlayer(session, RoomId, World.GetNextSpawnPoint);
+                var sceneInstance = World.GetOrCreateSceneInstance(session.SceneId, session.SceneInstanceId);
+                var playerEntity = World.Spawner.GetOrSpawnPlayer(session, RoomId, sceneInstance);
                 session.BindToRoom(RoomId, playerEntity.EntityId);
+                session.BindSceneContext(playerEntity.SceneId, playerEntity.SceneInstanceId);
 
                 var roomPlayer = new RoomPlayer(this, session, playerEntity);
                 _playersBySessionId[session.SessionId] = roomPlayer;
@@ -111,11 +113,32 @@ namespace IslaTortuga.Server.Core.Rooms
         public T SpawnEntity<T>(
             string entityType,
             string entityId,
+            SceneInstance sceneInstance,
             Action<UnityEngine.GameObject> configureObject,
             Action<T> initializeEntity)
             where T : NetworkEntity
         {
-            return World.Spawner.SpawnEntity(entityType, entityId, configureObject, initializeEntity);
+            return World.Spawner.SpawnEntity(entityType, entityId, sceneInstance, configureObject, initializeEntity);
+        }
+
+        public bool TryTransitionSessionToScene(PlayerSession session, string sceneId, string sceneInstanceId)
+        {
+            lock (_sync)
+            {
+                if (session == null)
+                {
+                    return false;
+                }
+
+                if (!_playersBySessionId.TryGetValue(session.SessionId, out var roomPlayer) || roomPlayer == null)
+                {
+                    return false;
+                }
+
+                var targetSceneInstance = World.MovePlayerToScene(roomPlayer.PlayerEntity, sceneId, sceneInstanceId);
+                session.BindSceneContext(targetSceneInstance.SceneId, targetSceneInstance.SceneInstanceId);
+                return true;
+            }
         }
 
         public void Tick(float deltaSeconds)
@@ -128,6 +151,8 @@ namespace IslaTortuga.Server.Core.Rooms
     {
         public string DefaultMapPath { get; set; } = string.Empty;
 
+        public string DefaultSceneId { get; set; } = "scene.default";
+
         public string DefaultRoomId { get; set; } = "room.default";
 
         public string DefaultWorldId { get; set; } = "world.default";
@@ -137,6 +162,8 @@ namespace IslaTortuga.Server.Core.Rooms
         public NetworkEntityPrefabDefinition PlayerDefinition { get; set; }
 
         public IReadOnlyList<NetworkEntityPrefabDefinition> PrefabDefinitions { get; set; } = Array.Empty<NetworkEntityPrefabDefinition>();
+
+        public IReadOnlyList<SceneTemplateDefinition> SceneTemplates { get; set; } = Array.Empty<SceneTemplateDefinition>();
     }
 
     public sealed class GameRoomManager
@@ -152,10 +179,11 @@ namespace IslaTortuga.Server.Core.Rooms
                 throw new ArgumentException("DefaultMapPath is required to bootstrap the embedded game server.", nameof(options));
             }
 
-            var tiledMap = tiledWorldBuilder.BuildFromFile(options.DefaultMapPath);
             var world = new GameWorld(
                 options.DefaultWorldId,
-                tiledMap,
+                options.DefaultSceneId,
+                options.SceneTemplates,
+                tiledWorldBuilder,
                 new ServerNetworkSpawnerOptions
                 {
                     PlayerDefinition = options.PlayerDefinition,
@@ -189,6 +217,11 @@ namespace IslaTortuga.Server.Core.Rooms
                     return room.AddOrGetPlayer(session);
                 }
 
+                if (string.IsNullOrWhiteSpace(session.SceneId))
+                {
+                    session.BindSceneContext(DefaultRoom.World.DefaultSceneInstance.SceneId, DefaultRoom.World.DefaultSceneInstance.SceneInstanceId);
+                }
+
                 return DefaultRoom.AddOrGetPlayer(session);
             }
         }
@@ -211,6 +244,26 @@ namespace IslaTortuga.Server.Core.Rooms
                 }
 
                 DefaultRoom.HandleSessionDisconnected(session, _options.DespawnDisconnectedPlayers);
+            }
+        }
+
+        public bool TryTransitionSessionToScene(PlayerSession session, string sceneId, string sceneInstanceId)
+        {
+            if (session == null)
+            {
+                return false;
+            }
+
+            lock (_sync)
+            {
+                GameRoom room;
+                if (!string.IsNullOrWhiteSpace(session.RoomId) &&
+                    _rooms.TryGetValue(session.RoomId, out room))
+                {
+                    return room.TryTransitionSessionToScene(session, sceneId, sceneInstanceId);
+                }
+
+                return DefaultRoom.TryTransitionSessionToScene(session, sceneId, sceneInstanceId);
             }
         }
 

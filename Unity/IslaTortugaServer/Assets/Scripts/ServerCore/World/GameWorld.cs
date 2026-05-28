@@ -10,6 +10,8 @@ namespace IslaTortuga.Server.Core.World
     public sealed class NetworkEntityDefinitionAsset : ScriptableObject
     {
         [SerializeField] private string entityType = string.Empty;
+        [SerializeField] private string defaultArchetypeId = string.Empty;
+        [SerializeField] private string defaultVisualId = string.Empty;
         [SerializeField] private GameObject prefab;
 
         public string EntityType
@@ -21,13 +23,197 @@ namespace IslaTortuga.Server.Core.World
         {
             get { return prefab; }
         }
+
+        public string DefaultArchetypeId
+        {
+            get { return defaultArchetypeId; }
+        }
+
+        public string DefaultVisualId
+        {
+            get { return defaultVisualId; }
+        }
     }
 
     public sealed class NetworkEntityPrefabDefinition
     {
         public string EntityType { get; set; } = string.Empty;
 
+        public string DefaultArchetypeId { get; set; } = string.Empty;
+
+        public string DefaultVisualId { get; set; } = string.Empty;
+
         public GameObject Prefab { get; set; }
+    }
+
+    public sealed class SceneTemplateDefinition
+    {
+        public string SceneId { get; set; } = string.Empty;
+
+        public string MapPath { get; set; } = string.Empty;
+    }
+
+    public sealed class SceneContext
+    {
+        public SceneContext(string sceneId, string sceneInstanceId)
+        {
+            SceneId = sceneId ?? string.Empty;
+            SceneInstanceId = sceneInstanceId ?? string.Empty;
+        }
+
+        public string SceneId { get; }
+
+        public string SceneInstanceId { get; }
+    }
+
+    public sealed class SceneInstance
+    {
+        private int _spawnCursor;
+
+        public SceneInstance(
+            string sceneId,
+            string sceneInstanceId,
+            TiledWorldMap map,
+            GameObject rootObject,
+            GameObject entitiesRoot)
+        {
+            SceneId = sceneId ?? string.Empty;
+            SceneInstanceId = sceneInstanceId ?? string.Empty;
+            Map = map;
+            RootObject = rootObject;
+            EntitiesRoot = entitiesRoot;
+        }
+
+        public string SceneId { get; }
+
+        public string SceneInstanceId { get; }
+
+        public TiledWorldMap Map { get; }
+
+        public GameObject RootObject { get; }
+
+        public GameObject EntitiesRoot { get; }
+
+        public Transform EntityRoot
+        {
+            get { return EntitiesRoot.transform; }
+        }
+
+        public (float X, float Y) GetNextSpawnPoint()
+        {
+            var spawnPoints = Map.GetSpawnPoints();
+
+            if (spawnPoints.Count == 0)
+            {
+                return (
+                    Map.Width * Map.TileWidth * 0.5f,
+                    Map.Height * Map.TileHeight * 0.5f);
+            }
+
+            var spawn = spawnPoints[_spawnCursor % spawnPoints.Count];
+            _spawnCursor++;
+            return (spawn.X, spawn.Y);
+        }
+    }
+
+    public sealed class SceneInstanceManager
+    {
+        private const float SceneSpacing = 1000f;
+        private readonly object _sync = new object();
+        private readonly GameObject _scenesRoot;
+        private readonly TiledWorldBuilder _tiledWorldBuilder;
+        private readonly Dictionary<string, SceneTemplateDefinition> _templatesBySceneId;
+        private readonly Dictionary<string, SceneInstance> _instancesByKey = new Dictionary<string, SceneInstance>();
+        private readonly string _defaultSceneId;
+        private int _nextInstanceIndex;
+
+        public SceneInstanceManager(
+            GameObject scenesRoot,
+            TiledWorldBuilder tiledWorldBuilder,
+            string defaultSceneId,
+            IReadOnlyList<SceneTemplateDefinition> sceneTemplates)
+        {
+            _scenesRoot = scenesRoot;
+            _tiledWorldBuilder = tiledWorldBuilder;
+            _defaultSceneId = string.IsNullOrWhiteSpace(defaultSceneId) ? "scene.default" : defaultSceneId;
+            _templatesBySceneId = new Dictionary<string, SceneTemplateDefinition>(StringComparer.OrdinalIgnoreCase);
+
+            var templates = sceneTemplates ?? Array.Empty<SceneTemplateDefinition>();
+            for (var index = 0; index < templates.Count; index++)
+            {
+                var template = templates[index];
+                if (template == null || string.IsNullOrWhiteSpace(template.SceneId) || string.IsNullOrWhiteSpace(template.MapPath))
+                {
+                    continue;
+                }
+
+                _templatesBySceneId[template.SceneId] = template;
+            }
+
+            DefaultSceneInstance = GetOrCreate(_defaultSceneId, "shared");
+        }
+
+        public SceneInstance DefaultSceneInstance { get; }
+
+        public SceneInstance GetOrCreate(string sceneId, string sceneInstanceId)
+        {
+            lock (_sync)
+            {
+                var resolvedSceneId = ResolveSceneId(sceneId);
+                var resolvedInstanceId = string.IsNullOrWhiteSpace(sceneInstanceId) ? "shared" : sceneInstanceId;
+                var key = BuildKey(resolvedSceneId, resolvedInstanceId);
+
+                if (_instancesByKey.TryGetValue(key, out var existingInstance))
+                {
+                    return existingInstance;
+                }
+
+                var template = ResolveTemplate(resolvedSceneId);
+                var map = _tiledWorldBuilder.BuildFromFile(template.MapPath);
+                var rootObject = new GameObject("SceneInstance:" + resolvedSceneId + ":" + resolvedInstanceId);
+                rootObject.transform.SetParent(_scenesRoot.transform, false);
+                rootObject.transform.position = ResolveSceneOffset(_nextInstanceIndex++);
+
+                var entitiesRoot = new GameObject("Entities");
+                entitiesRoot.transform.SetParent(rootObject.transform, false);
+
+                var instance = new SceneInstance(resolvedSceneId, resolvedInstanceId, map, rootObject, entitiesRoot);
+                _instancesByKey[key] = instance;
+                return instance;
+            }
+        }
+
+        public string ResolveSceneId(string sceneId)
+        {
+            return string.IsNullOrWhiteSpace(sceneId) ? _defaultSceneId : sceneId;
+        }
+
+        private SceneTemplateDefinition ResolveTemplate(string sceneId)
+        {
+            if (_templatesBySceneId.TryGetValue(sceneId, out var template))
+            {
+                return template;
+            }
+
+            if (_templatesBySceneId.TryGetValue(_defaultSceneId, out template))
+            {
+                return template;
+            }
+
+            throw new InvalidOperationException("No scene template has been registered for scene '" + sceneId + "'.");
+        }
+
+        private static string BuildKey(string sceneId, string sceneInstanceId)
+        {
+            return sceneId + "::" + sceneInstanceId;
+        }
+
+        private static Vector3 ResolveSceneOffset(int instanceIndex)
+        {
+            var column = instanceIndex % 8;
+            var row = instanceIndex / 8;
+            return new Vector3(column * SceneSpacing, 0f, row * SceneSpacing);
+        }
     }
 
     public sealed class ServerNetworkSpawnerOptions
@@ -73,16 +259,16 @@ namespace IslaTortuga.Server.Core.World
             }
         }
 
-        public PlayerEntity GetOrSpawnPlayer(PlayerSession session, string roomId, Func<(float X, float Y)> spawnResolver)
+        public PlayerEntity GetOrSpawnPlayer(PlayerSession session, string roomId, SceneInstance sceneInstance)
         {
             if (session == null)
             {
                 throw new ArgumentNullException(nameof(session));
             }
 
-            if (spawnResolver == null)
+            if (sceneInstance == null)
             {
-                throw new ArgumentNullException(nameof(spawnResolver));
+                throw new ArgumentNullException(nameof(sceneInstance));
             }
 
             lock (_sync)
@@ -94,22 +280,50 @@ namespace IslaTortuga.Server.Core.World
 
                 if (_playersByUserId.TryGetValue(session.UserId, out var existingPlayer) && existingPlayer != null)
                 {
+                    if (!string.Equals(existingPlayer.SceneId, sceneInstance.SceneId, StringComparison.OrdinalIgnoreCase) ||
+                        !string.Equals(existingPlayer.SceneInstanceId, sceneInstance.SceneInstanceId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var relocationSpawn = sceneInstance.GetNextSpawnPoint();
+                        existingPlayer.RelocateToScene(
+                            sceneInstance.SceneId,
+                            sceneInstance.SceneInstanceId,
+                            sceneInstance.EntityRoot,
+                            relocationSpawn.X,
+                            relocationSpawn.Y);
+                    }
+
                     existingPlayer.AttachSession(session.SessionId);
                     return existingPlayer;
                 }
 
-                var spawn = spawnResolver();
+                var spawn = sceneInstance.GetNextSpawnPoint();
                 var entityId = "player_" + session.UserId;
+                var visualId = string.IsNullOrWhiteSpace(session.VisualId)
+                    ? _playerDefinition.DefaultVisualId
+                    : session.VisualId;
                 var playerEntity = SpawnEntityInternal<PlayerEntity>(
                     _playerDefinition.EntityType,
                     entityId,
+                    sceneInstance,
                     go =>
                     {
                         EnsurePlayerDefaults(go);
                     },
                     entity =>
                     {
-                        entity.Initialize(entityId, _playerDefinition.EntityType, roomId, session.UserId, session.DisplayName, session.VisualId, spawn.X, spawn.Y);
+                        entity.Initialize(
+                            entityId,
+                            _playerDefinition.EntityType,
+                            _playerDefinition.DefaultArchetypeId,
+                            roomId,
+                            sceneInstance.SceneId,
+                            sceneInstance.SceneInstanceId,
+                            sceneInstance.EntityRoot,
+                            session.UserId,
+                            session.DisplayName,
+                            visualId,
+                            spawn.X,
+                            spawn.Y);
                         entity.AttachSession(session.SessionId);
                     });
 
@@ -121,13 +335,14 @@ namespace IslaTortuga.Server.Core.World
         public T SpawnEntity<T>(
             string entityType,
             string entityId,
+            SceneInstance sceneInstance,
             Action<GameObject> configureObject,
             Action<T> initializeEntity)
             where T : NetworkEntity
         {
             lock (_sync)
             {
-                return SpawnEntityInternal(entityType, entityId, configureObject, initializeEntity);
+                return SpawnEntityInternal(entityType, entityId, sceneInstance, configureObject, initializeEntity);
             }
         }
 
@@ -176,6 +391,7 @@ namespace IslaTortuga.Server.Core.World
         private T SpawnEntityInternal<T>(
             string entityType,
             string entityId,
+            SceneInstance sceneInstance,
             Action<GameObject> configureObject,
             Action<T> initializeEntity)
             where T : NetworkEntity
@@ -192,7 +408,7 @@ namespace IslaTortuga.Server.Core.World
                 return typedExistingEntity;
             }
 
-            var entityObject = CreateEntityObject(entityType, entityId);
+            var entityObject = CreateEntityObject(entityType, entityId, sceneInstance);
             configureObject?.Invoke(entityObject);
 
             var entity = entityObject.GetComponent<T>();
@@ -206,17 +422,17 @@ namespace IslaTortuga.Server.Core.World
             return entity;
         }
 
-        private GameObject CreateEntityObject(string entityType, string entityId)
+        private GameObject CreateEntityObject(string entityType, string entityId, SceneInstance sceneInstance)
         {
             GameObject entityObject;
             if (_prefabsByEntityType.TryGetValue(entityType, out var prefab) && prefab != null)
             {
-                entityObject = UnityEngine.Object.Instantiate(prefab, _entityRoot);
+                entityObject = UnityEngine.Object.Instantiate(prefab, sceneInstance != null ? sceneInstance.EntityRoot : _entityRoot);
             }
             else
             {
                 entityObject = new GameObject(entityType + ":" + entityId);
-                entityObject.transform.SetParent(_entityRoot, false);
+                entityObject.transform.SetParent(sceneInstance != null ? sceneInstance.EntityRoot : _entityRoot, false);
             }
 
             entityObject.name = entityType + ":" + entityId;
@@ -262,50 +478,70 @@ namespace IslaTortuga.Server.Core.World
 
     public sealed class GameWorld
     {
-        private int _spawnCursor;
         private readonly GameObject _worldRoot;
-        private readonly GameObject _entitiesRoot;
+        private readonly GameObject _scenesRoot;
 
-        public GameWorld(string worldId, TiledWorldMap map, ServerNetworkSpawnerOptions spawnerOptions)
+        public GameWorld(
+            string worldId,
+            string defaultSceneId,
+            IReadOnlyList<SceneTemplateDefinition> sceneTemplates,
+            TiledWorldBuilder tiledWorldBuilder,
+            ServerNetworkSpawnerOptions spawnerOptions)
         {
             WorldId = worldId;
-            Map = map;
             _worldRoot = new GameObject("ServerWorld:" + worldId);
-            _entitiesRoot = new GameObject("Entities");
-            _entitiesRoot.transform.SetParent(_worldRoot.transform, false);
+            _scenesRoot = new GameObject("Scenes");
+            _scenesRoot.transform.SetParent(_worldRoot.transform, false);
             UnityEngine.Object.DontDestroyOnLoad(_worldRoot);
-            Spawner = new ServerNetworkSpawner(_entitiesRoot.transform, Entities, spawnerOptions);
+            SceneInstances = new SceneInstanceManager(
+                _scenesRoot,
+                tiledWorldBuilder,
+                defaultSceneId,
+                sceneTemplates);
+            Spawner = new ServerNetworkSpawner(_scenesRoot.transform, Entities, spawnerOptions);
         }
 
         public string WorldId { get; }
 
-        public TiledWorldMap Map { get; }
+        public TiledWorldMap Map
+        {
+            get { return SceneInstances.DefaultSceneInstance.Map; }
+        }
 
         public EntityManager Entities { get; } = new EntityManager();
 
         public ServerNetworkSpawner Spawner { get; }
 
-        public Transform EntityRoot
+        public SceneInstanceManager SceneInstances { get; }
+
+        public SceneInstance DefaultSceneInstance
         {
-            get { return _entitiesRoot.transform; }
+            get { return SceneInstances.DefaultSceneInstance; }
         }
 
         public long CurrentTick { get; private set; }
 
-        public (float X, float Y) GetNextSpawnPoint()
+        public SceneInstance GetOrCreateSceneInstance(string sceneId, string sceneInstanceId)
         {
-            var spawnPoints = Map.GetSpawnPoints();
+            return SceneInstances.GetOrCreate(sceneId, sceneInstanceId);
+        }
 
-            if (spawnPoints.Count == 0)
+        public SceneInstance MovePlayerToScene(PlayerEntity playerEntity, string sceneId, string sceneInstanceId)
+        {
+            if (playerEntity == null)
             {
-                return (
-                    Map.Width * Map.TileWidth * 0.5f,
-                    Map.Height * Map.TileHeight * 0.5f);
+                throw new ArgumentNullException(nameof(playerEntity));
             }
 
-            var spawn = spawnPoints[_spawnCursor % spawnPoints.Count];
-            _spawnCursor++;
-            return (spawn.X, spawn.Y);
+            var targetSceneInstance = SceneInstances.GetOrCreate(sceneId, sceneInstanceId);
+            var spawnPoint = targetSceneInstance.GetNextSpawnPoint();
+            playerEntity.RelocateToScene(
+                targetSceneInstance.SceneId,
+                targetSceneInstance.SceneInstanceId,
+                targetSceneInstance.EntityRoot,
+                spawnPoint.X,
+                spawnPoint.Y);
+            return targetSceneInstance;
         }
 
         public void Tick(float deltaSeconds)

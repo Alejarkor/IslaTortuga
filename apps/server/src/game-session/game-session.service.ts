@@ -11,7 +11,7 @@ type ContentPackIndex = {
   packs: Array<{
     contentPackId: string;
     version: string;
-    mapId: string;
+    sceneId: string;
     manifestUrl: string;
   }>;
 };
@@ -58,7 +58,7 @@ export class GameSessionService {
       gameTicket,
       contentPackId: defaultPack.contentPackId,
       contentVersion: defaultPack.version,
-      mapId: defaultPack.mapId,
+      sceneId: defaultPack.sceneId,
       manifestUrl: defaultPack.manifestUrl,
       webSocketUrl: '/ws/game',
       localPlayerAppearance: {

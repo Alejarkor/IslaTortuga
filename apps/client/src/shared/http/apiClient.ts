@@ -30,7 +30,7 @@ export type StartGameResponse = {
   gameTicket: string;
   contentPackId: string;
   contentVersion: string;
-  mapId: string;
+  sceneId: string;
   manifestUrl: string;
   webSocketUrl: string;
   localPlayerAppearance: {

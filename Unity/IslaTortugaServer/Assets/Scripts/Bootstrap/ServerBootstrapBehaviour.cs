@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using IslaTortuga.Server.Core.Embedded;
@@ -33,6 +34,7 @@ namespace IslaTortuga.Unity.Bootstrap
         private Exception _startupException;
         private string _contentRoot = string.Empty;
         private string _mapPath = string.Empty;
+        private string _defaultSceneId = "scene.default";
         private string _statusMessage = "Booting embedded server...";
 
         public EmbeddedGameServerHost Server
@@ -66,6 +68,7 @@ namespace IslaTortuga.Unity.Bootstrap
             if (_server != null)
             {
                 GUILayout.Label("Map: " + _server.MapName);
+                GUILayout.Label("Default Scene: " + _defaultSceneId);
                 GUILayout.Label("Map Path: " + _mapPath);
                 GUILayout.Label("Content Root: " + _contentRoot);
                 GUILayout.Label("Rooms: " + _server.RoomCount + " | Sessions: " + _server.SessionCount + " | Players: " + _server.PlayerCount);
@@ -111,10 +114,12 @@ namespace IslaTortuga.Unity.Bootstrap
             {
                 _contentRoot = ResolveContentRoot();
                 _mapPath = ResolveMapPath(_contentRoot);
+                _defaultSceneId = ResolveDefaultSceneId(_contentRoot);
 
                 _server = new EmbeddedGameServerHost(new EmbeddedGameServerHostOptions
                 {
                     DefaultMapPath = _mapPath,
+                    DefaultSceneId = _defaultSceneId,
                     DefaultRoomId = DefaultRoomId,
                     DefaultWorldId = DefaultWorldId,
                     TickDeltaSeconds = 1f / DefaultServerTickRateHz,
@@ -122,6 +127,7 @@ namespace IslaTortuga.Unity.Bootstrap
                     DespawnDisconnectedPlayers = despawnDisconnectedPlayers,
                     PlayerDefinition = BuildPlayerDefinition(),
                     PrefabDefinitions = BuildEntityDefinitions(),
+                    SceneTemplates = BuildSceneTemplates(_contentRoot, _mapPath, _defaultSceneId),
                 });
                 _tickRunner = new ServerTickRunner(DefaultServerTickRateHz);
 
@@ -195,6 +201,41 @@ namespace IslaTortuga.Unity.Bootstrap
             throw new FileNotFoundException("No se encontro ningun mapa .tmj para el bootstrap del servidor.", contentRoot);
         }
 
+        private static string ResolveDefaultSceneId(string contentRoot)
+        {
+            var indexPath = Path.Combine(contentRoot, "index.json");
+            if (!File.Exists(indexPath))
+            {
+                return "scene.default";
+            }
+
+            try
+            {
+                var index = JsonUtility.FromJson<ContentIndexDto>(File.ReadAllText(indexPath));
+                if (index == null || index.packs == null || index.packs.Length == 0)
+                {
+                    return "scene.default";
+                }
+
+                var defaultPack = index.packs.FirstOrDefault(pack =>
+                    pack != null &&
+                    string.Equals(pack.contentPackId, index.defaultContentPackId, StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrWhiteSpace(pack.sceneId));
+
+                if (defaultPack != null)
+                {
+                    return defaultPack.sceneId;
+                }
+
+                return index.packs.FirstOrDefault(pack => pack != null && !string.IsNullOrWhiteSpace(pack.sceneId))?.sceneId
+                    ?? "scene.default";
+            }
+            catch
+            {
+                return "scene.default";
+            }
+        }
+
         private void ShutdownGateway()
         {
             if (_networkGateway == null)
@@ -213,11 +254,11 @@ namespace IslaTortuga.Unity.Bootstrap
                 _networkGateway.PumpInboundMessages();
             }
 
-            var snapshots = _server.Tick();
+            var deltas = _server.Tick();
 
             if (_networkGateway != null)
             {
-                _networkGateway.BroadcastSnapshots(snapshots);
+                _networkGateway.BroadcastDeltas(deltas);
             }
         }
 
@@ -233,10 +274,42 @@ namespace IslaTortuga.Unity.Bootstrap
                 .Select(definition => new NetworkEntityPrefabDefinition
                 {
                     EntityType = definition.EntityType,
+                    DefaultArchetypeId = definition.DefaultArchetypeId,
+                    DefaultVisualId = definition.DefaultVisualId,
                     Prefab = definition.Prefab,
                 })
                 .GroupBy(definition => definition.EntityType, StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.Last())
+                .ToArray();
+        }
+
+        private static SceneTemplateDefinition[] BuildSceneTemplates(string contentRoot, string defaultMapPath, string defaultSceneId)
+        {
+            var templates = new List<SceneTemplateDefinition>
+            {
+                new SceneTemplateDefinition
+                {
+                    SceneId = defaultSceneId,
+                    MapPath = defaultMapPath,
+                }
+            };
+
+            if (Directory.Exists(contentRoot))
+            {
+                foreach (var mapFile in Directory.GetFiles(contentRoot, "*.tmj", SearchOption.AllDirectories))
+                {
+                    templates.Add(new SceneTemplateDefinition
+                    {
+                        SceneId = "scene." + Path.GetFileNameWithoutExtension(mapFile),
+                        MapPath = mapFile,
+                    });
+                }
+            }
+
+            return templates
+                .Where(template => template != null && !string.IsNullOrWhiteSpace(template.SceneId) && !string.IsNullOrWhiteSpace(template.MapPath))
+                .GroupBy(template => template.SceneId, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
                 .ToArray();
         }
 
@@ -250,6 +323,8 @@ namespace IslaTortuga.Unity.Bootstrap
             return new NetworkEntityPrefabDefinition
             {
                 EntityType = playerEntityDefinition.EntityType,
+                DefaultArchetypeId = playerEntityDefinition.DefaultArchetypeId,
+                DefaultVisualId = playerEntityDefinition.DefaultVisualId,
                 Prefab = playerEntityDefinition.Prefab,
             };
         }
@@ -259,6 +334,20 @@ namespace IslaTortuga.Unity.Bootstrap
             return playerEntityDefinition == null || string.IsNullOrWhiteSpace(playerEntityDefinition.EntityType)
                 ? "Not configured"
                 : playerEntityDefinition.EntityType;
+        }
+
+        [Serializable]
+        private sealed class ContentIndexDto
+        {
+            public string defaultContentPackId;
+            public ContentPackDto[] packs;
+        }
+
+        [Serializable]
+        private sealed class ContentPackDto
+        {
+            public string contentPackId;
+            public string sceneId;
         }
     }
 

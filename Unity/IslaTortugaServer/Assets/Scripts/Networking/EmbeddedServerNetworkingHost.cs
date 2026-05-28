@@ -88,26 +88,32 @@ namespace IslaTortuga.Unity.Networking
             }
         }
 
-        public void BroadcastSnapshots(IReadOnlyList<EmbeddedGameServerTickResult> snapshots)
+        public void BroadcastDeltas(IReadOnlyList<EmbeddedGameServerTickResult> deltas)
         {
             ThrowIfDisposed();
 
-            if (snapshots == null)
+            if (deltas == null)
             {
                 return;
             }
 
-            for (var index = 0; index < snapshots.Count; index++)
+            for (var index = 0; index < deltas.Count; index++)
             {
-                var tickResult = snapshots[index];
+                var tickResult = deltas[index];
                 if (!_connectionManager.TryGetBySessionId(tickResult.SessionId, out var connection) || connection == null)
                 {
                     continue;
                 }
 
+                if (tickResult.SceneChange != null)
+                {
+                    ObserveTask(SendSceneChangeAndDeltaAsync(connection, tickResult, _cancellationTokenSource.Token));
+                    continue;
+                }
+
                 ObserveTask(connection.SendAsync(
-                    ProtocolTypes.WorldSnapshot,
-                    tickResult.Snapshot,
+                    ProtocolTypes.WorldDelta,
+                    tickResult.Delta,
                     null,
                     _cancellationTokenSource.Token));
             }
@@ -363,6 +369,24 @@ namespace IslaTortuga.Unity.Networking
                 TaskScheduler.Default);
         }
 
+        private static async Task SendSceneChangeAndDeltaAsync(
+            ClientConnection connection,
+            EmbeddedGameServerTickResult tickResult,
+            CancellationToken cancellationToken)
+        {
+            await connection.SendAsync(
+                ProtocolTypes.SceneChange,
+                tickResult.SceneChange,
+                null,
+                cancellationToken);
+
+            await connection.SendAsync(
+                ProtocolTypes.WorldDelta,
+                tickResult.Delta,
+                null,
+                cancellationToken);
+        }
+
         private sealed class ConnectionManager
         {
             private readonly ConcurrentDictionary<string, ClientConnection> _connections = new ConcurrentDictionary<string, ClientConnection>();
@@ -557,7 +581,8 @@ namespace IslaTortuga.Unity.Networking
                 _connectionManager.BindSession(connection, result.Auth.SessionId);
 
                 await connection.SendAsync(ProtocolTypes.AuthAccepted, result.Auth, envelope.RequestId, cancellationToken);
-                await connection.SendAsync(ProtocolTypes.WorldSnapshot, result.Snapshot, null, cancellationToken);
+                await connection.SendAsync(ProtocolTypes.SceneBootstrap, result.Scene, null, cancellationToken);
+                await connection.SendAsync(ProtocolTypes.WorldDelta, result.Delta, null, cancellationToken);
             }
 
             private async Task HandleReconnectAsync(ClientConnection connection, IncomingEnvelope envelope, CancellationToken cancellationToken)
@@ -584,7 +609,8 @@ namespace IslaTortuga.Unity.Networking
                 _connectionManager.BindSession(connection, result.Auth.SessionId);
 
                 await connection.SendAsync(ProtocolTypes.AuthAccepted, result.Auth, envelope.RequestId, cancellationToken);
-                await connection.SendAsync(ProtocolTypes.WorldSnapshot, result.Snapshot, null, cancellationToken);
+                await connection.SendAsync(ProtocolTypes.SceneBootstrap, result.Scene, null, cancellationToken);
+                await connection.SendAsync(ProtocolTypes.WorldDelta, result.Delta, null, cancellationToken);
             }
 
             private async Task HandlePlayerInputAsync(ClientConnection connection, IncomingEnvelope envelope, CancellationToken cancellationToken)

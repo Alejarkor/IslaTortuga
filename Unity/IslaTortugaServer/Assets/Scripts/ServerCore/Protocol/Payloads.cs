@@ -45,29 +45,48 @@ namespace IslaTortuga.Server.Core.Protocol
         public bool Retryable { get; }
     }
 
-    public sealed class EntityStatePayload
+    public sealed class SceneContextPayload
     {
-        public EntityStatePayload(
+        public SceneContextPayload(string sceneId, string sceneInstanceId)
+        {
+            SceneId = sceneId;
+            SceneInstanceId = sceneInstanceId;
+        }
+
+        public string SceneId { get; }
+
+        public string SceneInstanceId { get; }
+    }
+
+    public sealed class EntitySpawnPayload
+    {
+        public EntitySpawnPayload(
             string entityId,
             string entityType,
+            string archetypeId,
+            string visualId,
             float x,
             float y,
             string facing,
-            string displayName,
-            string visualId)
+            string displayName)
         {
             EntityId = entityId;
             EntityType = entityType;
+            ArchetypeId = archetypeId;
+            VisualId = visualId;
             X = x;
             Y = y;
             Facing = facing;
             DisplayName = displayName;
-            VisualId = visualId;
         }
 
         public string EntityId { get; }
 
         public string EntityType { get; }
+
+        public string ArchetypeId { get; }
+
+        public string VisualId { get; }
 
         public float X { get; }
 
@@ -76,26 +95,65 @@ namespace IslaTortuga.Server.Core.Protocol
         public string Facing { get; }
 
         public string DisplayName { get; }
-
-        public string VisualId { get; }
     }
 
-    public sealed class WorldSnapshotPayload
+    public sealed class EntityUpdatePayload
     {
-        public WorldSnapshotPayload(
+        public EntityUpdatePayload(
+            string entityId,
+            float x,
+            float y,
+            string facing)
+        {
+            EntityId = entityId;
+            X = x;
+            Y = y;
+            Facing = facing;
+        }
+
+        public string EntityId { get; }
+
+        public float X { get; }
+
+        public float Y { get; }
+
+        public string Facing { get; }
+    }
+
+    public sealed class EntityDespawnPayload
+    {
+        public EntityDespawnPayload(string entityId)
+        {
+            EntityId = entityId;
+        }
+
+        public string EntityId { get; }
+    }
+
+    public sealed class WorldDeltaPayload
+    {
+        public WorldDeltaPayload(
             long serverTick,
             string roomId,
-            IReadOnlyList<EntityStatePayload> entities)
+            IReadOnlyList<EntitySpawnPayload> spawns,
+            IReadOnlyList<EntityUpdatePayload> updates,
+            IReadOnlyList<EntityDespawnPayload> despawns)
         {
             ServerTick = serverTick;
             RoomId = roomId;
-            Entities = entities;
+            Spawns = spawns;
+            Updates = updates;
+            Despawns = despawns;
         }
 
         public long ServerTick { get; }
 
         public string RoomId { get; }
 
-        public IReadOnlyList<EntityStatePayload> Entities { get; }
+        public IReadOnlyList<EntitySpawnPayload> Spawns { get; }
+
+        public IReadOnlyList<EntityUpdatePayload> Updates { get; }
+
+        public IReadOnlyList<EntityDespawnPayload> Despawns { get; }
     }
 }

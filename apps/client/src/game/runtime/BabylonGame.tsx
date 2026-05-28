@@ -55,7 +55,7 @@ export function BabylonGame({ runtime }: BabylonGameProps) {
         <p className="eyebrow">Babylon Client</p>
         <p className="babylon-status">{status}</p>
         <p className="muted">Content pack: {runtime.manifest.contentPackId}</p>
-        <p className="muted">Mapa: {runtime.startGame.mapId}</p>
+        <p className="muted">Escena: {runtime.startGame.sceneId}</p>
         <p className="muted">Movimiento: WASD o flechas</p>
         {error ? <p className="error">{error}</p> : null}
       </aside>

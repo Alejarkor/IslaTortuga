@@ -1,6 +1,9 @@
 {
-  "player.default": {
-    "visualId": "player.default",
-    "networkType": "player"
+  "archetypes": {
+    "player.human": {
+      "archetypeId": "player.human",
+      "entityType": "player",
+      "defaultVisualId": "player.default"
+    }
   }
 }

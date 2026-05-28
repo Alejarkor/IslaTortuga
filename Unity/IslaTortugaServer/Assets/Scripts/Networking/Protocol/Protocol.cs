@@ -13,8 +13,10 @@ namespace IslaTortuga.Unity.Networking.Protocol
         public const string AuthReconnect = "auth.reconnect";
         public const string AuthAccepted = "auth.accepted";
         public const string AuthRejected = "auth.rejected";
+        public const string SceneBootstrap = "scene.bootstrap";
+        public const string SceneChange = "scene.change";
         public const string PlayerInput = "player.input";
-        public const string WorldSnapshot = "world.snapshot";
+        public const string WorldDelta = "world.delta";
         public const string Error = "error";
         public const string Ping = "ping";
         public const string Pong = "pong";
@@ -218,30 +220,71 @@ namespace IslaTortuga.Unity.Networking.Protocol
                 return;
             }
 
-            var worldSnapshot = payload as WorldSnapshotPayload;
-            if (worldSnapshot != null)
+            var sceneContext = payload as SceneContextPayload;
+            if (sceneContext != null)
             {
                 builder.Append('{');
-                AppendNumberProperty(builder, "serverTick", worldSnapshot.ServerTick, false);
-                AppendProperty(builder, "roomId", worldSnapshot.RoomId, true);
-                builder.Append(",\"entities\":[");
+                AppendProperty(builder, "sceneId", sceneContext.SceneId, false);
+                AppendProperty(builder, "sceneInstanceId", sceneContext.SceneInstanceId, true);
+                builder.Append('}');
+                return;
+            }
 
-                for (var index = 0; index < worldSnapshot.Entities.Count; index++)
+            var worldDelta = payload as WorldDeltaPayload;
+            if (worldDelta != null)
+            {
+                builder.Append('{');
+                AppendNumberProperty(builder, "serverTick", worldDelta.ServerTick, false);
+                AppendProperty(builder, "roomId", worldDelta.RoomId, true);
+                builder.Append(",\"spawns\":[");
+                for (var index = 0; index < worldDelta.Spawns.Count; index++)
                 {
                     if (index > 0)
                     {
                         builder.Append(',');
                     }
 
-                    var entity = worldSnapshot.Entities[index];
+                    var spawn = worldDelta.Spawns[index];
                     builder.Append('{');
-                    AppendProperty(builder, "entityId", entity.EntityId, false);
-                    AppendProperty(builder, "entityType", entity.EntityType, true);
-                    AppendFloatProperty(builder, "x", entity.X, true);
-                    AppendFloatProperty(builder, "y", entity.Y, true);
-                    AppendProperty(builder, "facing", entity.Facing, true);
-                    AppendNullableProperty(builder, "displayName", entity.DisplayName, true);
-                    AppendNullableProperty(builder, "visualId", entity.VisualId, true);
+                    AppendProperty(builder, "entityId", spawn.EntityId, false);
+                    AppendProperty(builder, "entityType", spawn.EntityType, true);
+                    AppendNullableProperty(builder, "archetypeId", spawn.ArchetypeId, true);
+                    AppendNullableProperty(builder, "visualId", spawn.VisualId, true);
+                    AppendFloatProperty(builder, "x", spawn.X, true);
+                    AppendFloatProperty(builder, "y", spawn.Y, true);
+                    AppendProperty(builder, "facing", spawn.Facing, true);
+                    AppendNullableProperty(builder, "displayName", spawn.DisplayName, true);
+                    builder.Append('}');
+                }
+
+                builder.Append("],\"updates\":[");
+                for (var index = 0; index < worldDelta.Updates.Count; index++)
+                {
+                    if (index > 0)
+                    {
+                        builder.Append(',');
+                    }
+
+                    var update = worldDelta.Updates[index];
+                    builder.Append('{');
+                    AppendProperty(builder, "entityId", update.EntityId, false);
+                    AppendFloatProperty(builder, "x", update.X, true);
+                    AppendFloatProperty(builder, "y", update.Y, true);
+                    AppendProperty(builder, "facing", update.Facing, true);
+                    builder.Append('}');
+                }
+
+                builder.Append("],\"despawns\":[");
+                for (var index = 0; index < worldDelta.Despawns.Count; index++)
+                {
+                    if (index > 0)
+                    {
+                        builder.Append(',');
+                    }
+
+                    var despawn = worldDelta.Despawns[index];
+                    builder.Append('{');
+                    AppendProperty(builder, "entityId", despawn.EntityId, false);
                     builder.Append('}');
                 }
 

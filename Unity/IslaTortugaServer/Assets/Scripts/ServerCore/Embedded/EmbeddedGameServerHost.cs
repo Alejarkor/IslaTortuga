@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Linq;
 using IslaTortuga.Server.Core.Protocol;
 using IslaTortuga.Server.Core.Replication;
 using IslaTortuga.Server.Core.Rooms;
@@ -13,6 +14,8 @@ namespace IslaTortuga.Server.Core.Embedded
     public sealed class EmbeddedGameServerHostOptions
     {
         public string DefaultMapPath { get; set; } = string.Empty;
+
+        public string DefaultSceneId { get; set; } = "scene.default";
 
         public string DefaultRoomId { get; set; } = "room.default";
 
@@ -27,19 +30,24 @@ namespace IslaTortuga.Server.Core.Embedded
         public NetworkEntityPrefabDefinition PlayerDefinition { get; set; }
 
         public IReadOnlyList<NetworkEntityPrefabDefinition> PrefabDefinitions { get; set; } = Array.Empty<NetworkEntityPrefabDefinition>();
+
+        public IReadOnlyList<SceneTemplateDefinition> SceneTemplates { get; set; } = Array.Empty<SceneTemplateDefinition>();
     }
 
     public sealed class EmbeddedGameServerJoinResult
     {
-        public EmbeddedGameServerJoinResult(AuthAcceptedPayload auth, WorldSnapshotPayload snapshot)
+        public EmbeddedGameServerJoinResult(AuthAcceptedPayload auth, SceneContextPayload scene, WorldDeltaPayload delta)
         {
             Auth = auth;
-            Snapshot = snapshot;
+            Scene = scene;
+            Delta = delta;
         }
 
         public AuthAcceptedPayload Auth { get; }
 
-        public WorldSnapshotPayload Snapshot { get; }
+        public SceneContextPayload Scene { get; }
+
+        public WorldDeltaPayload Delta { get; }
     }
 
     public sealed class EmbeddedGameServerTickResult
@@ -49,13 +57,15 @@ namespace IslaTortuga.Server.Core.Embedded
             string userId,
             string roomId,
             string playerEntityId,
-            WorldSnapshotPayload snapshot)
+            SceneContextPayload sceneChange,
+            WorldDeltaPayload delta)
         {
             SessionId = sessionId;
             UserId = userId;
             RoomId = roomId;
             PlayerEntityId = playerEntityId;
-            Snapshot = snapshot;
+            SceneChange = sceneChange;
+            Delta = delta;
         }
 
         public string SessionId { get; }
@@ -66,7 +76,9 @@ namespace IslaTortuga.Server.Core.Embedded
 
         public string PlayerEntityId { get; }
 
-        public WorldSnapshotPayload Snapshot { get; }
+        public SceneContextPayload SceneChange { get; }
+
+        public WorldDeltaPayload Delta { get; }
     }
 
     public sealed class EmbeddedGameServerHost
@@ -74,7 +86,8 @@ namespace IslaTortuga.Server.Core.Embedded
         private readonly GameTicketService _gameTicketService;
         private readonly SessionManager _sessionManager;
         private readonly GameRoomManager _gameRoomManager;
-        private readonly SnapshotBuilder _snapshotBuilder;
+        private readonly DeltaBuilder _deltaBuilder;
+        private readonly ConcurrentDictionary<string, string> _sceneContextBySessionId = new ConcurrentDictionary<string, string>();
         private readonly ConcurrentQueue<string> _pendingDisconnectedConnectionIds = new ConcurrentQueue<string>();
 
         public EmbeddedGameServerHost(EmbeddedGameServerHostOptions options)
@@ -95,15 +108,20 @@ namespace IslaTortuga.Server.Core.Embedded
                 new GameRoomManagerOptions
                 {
                     DefaultMapPath = options.DefaultMapPath,
+                    DefaultSceneId = options.DefaultSceneId,
                     DefaultRoomId = options.DefaultRoomId,
                     DefaultWorldId = options.DefaultWorldId,
                     DespawnDisconnectedPlayers = options.DespawnDisconnectedPlayers,
                     PlayerDefinition = options.PlayerDefinition,
                     PrefabDefinitions = options.PrefabDefinitions,
+                    SceneTemplates = options.SceneTemplates,
                 },
                 tiledWorldBuilder);
 
-            _snapshotBuilder = new SnapshotBuilder(new InterestManager(), new EntityReplicator());
+            _deltaBuilder = new DeltaBuilder(
+                new InterestManager(),
+                new EntityReplicator(),
+                new ReplicationStateStore());
         }
 
         public float TickDeltaSeconds { get; }
@@ -203,32 +221,54 @@ namespace IslaTortuga.Server.Core.Embedded
             return true;
         }
 
+        public bool TryTransitionSessionToScene(string sessionId, string sceneId, string sceneInstanceId)
+        {
+            if (string.IsNullOrWhiteSpace(sessionId))
+            {
+                return false;
+            }
+
+            if (!_sessionManager.TryGetBySessionId(sessionId, out var session))
+            {
+                return false;
+            }
+
+            return _gameRoomManager.TryTransitionSessionToScene(session, sceneId, sceneInstanceId);
+        }
+
         public IReadOnlyList<EmbeddedGameServerTickResult> Tick()
         {
             FlushDisconnectedConnections();
             _gameRoomManager.TickAll(TickDeltaSeconds);
-            return BuildSnapshots();
+            return BuildDeltas();
         }
 
-        public IReadOnlyList<EmbeddedGameServerTickResult> BuildSnapshots()
+        public IReadOnlyList<EmbeddedGameServerTickResult> BuildDeltas()
         {
-            var snapshots = new List<EmbeddedGameServerTickResult>();
+            var deltas = new List<EmbeddedGameServerTickResult>();
 
             foreach (var room in _gameRoomManager.GetAllRooms())
             {
                 foreach (var roomPlayer in room.Players)
                 {
-                    var snapshot = _snapshotBuilder.Build(room, roomPlayer);
-                    snapshots.Add(new EmbeddedGameServerTickResult(
+                    var sceneChange = ResolveSceneChange(roomPlayer);
+                    if (sceneChange != null)
+                    {
+                        _deltaBuilder.ResetSession(roomPlayer.Session.SessionId);
+                    }
+
+                    var delta = _deltaBuilder.Build(room, roomPlayer);
+                    deltas.Add(new EmbeddedGameServerTickResult(
                         roomPlayer.Session.SessionId,
                         roomPlayer.Session.UserId,
                         room.RoomId,
                         roomPlayer.PlayerEntity.EntityId,
-                        snapshot));
+                        sceneChange,
+                        delta));
                 }
             }
 
-            return snapshots;
+            return deltas;
         }
 
         public void MarkDisconnected(string connectionId)
@@ -241,6 +281,10 @@ namespace IslaTortuga.Server.Core.Embedded
 
         private EmbeddedGameServerJoinResult BuildJoinResult(RoomPlayer roomPlayer)
         {
+            _deltaBuilder.ResetSession(roomPlayer.Session.SessionId);
+            var sceneContext = BuildSceneContextPayload(roomPlayer.PlayerEntity);
+            RememberSceneContext(roomPlayer.Session.SessionId, sceneContext);
+
             return new EmbeddedGameServerJoinResult(
                 new AuthAcceptedPayload(
                     roomPlayer.Session.SessionId,
@@ -248,7 +292,8 @@ namespace IslaTortuga.Server.Core.Embedded
                     roomPlayer.Session.DisplayName,
                     roomPlayer.Room.RoomId,
                     roomPlayer.PlayerEntity.EntityId),
-                _snapshotBuilder.Build(roomPlayer.Room, roomPlayer));
+                sceneContext,
+                _deltaBuilder.Build(roomPlayer.Room, roomPlayer));
         }
 
         private void FlushDisconnectedConnections()
@@ -258,9 +303,42 @@ namespace IslaTortuga.Server.Core.Embedded
                 var disconnectedSession = _sessionManager.MarkDisconnected(connectionId);
                 if (disconnectedSession != null)
                 {
+                    _sceneContextBySessionId.TryRemove(disconnectedSession.SessionId, out _);
                     _gameRoomManager.HandleSessionDisconnected(disconnectedSession);
                 }
             }
+        }
+
+        private SceneContextPayload ResolveSceneChange(RoomPlayer roomPlayer)
+        {
+            var sceneContext = BuildSceneContextPayload(roomPlayer.PlayerEntity);
+            var key = BuildSceneContextKey(sceneContext);
+
+            if (_sceneContextBySessionId.TryGetValue(roomPlayer.Session.SessionId, out var knownSceneKey) &&
+                string.Equals(knownSceneKey, key, StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            RememberSceneContext(roomPlayer.Session.SessionId, sceneContext);
+            return sceneContext;
+        }
+
+        private static SceneContextPayload BuildSceneContextPayload(PlayerEntity playerEntity)
+        {
+            return new SceneContextPayload(
+                playerEntity.SceneId,
+                playerEntity.SceneInstanceId);
+        }
+
+        private void RememberSceneContext(string sessionId, SceneContextPayload sceneContext)
+        {
+            _sceneContextBySessionId[sessionId] = BuildSceneContextKey(sceneContext);
+        }
+
+        private static string BuildSceneContextKey(SceneContextPayload sceneContext)
+        {
+            return (sceneContext.SceneId ?? string.Empty) + "::" + (sceneContext.SceneInstanceId ?? string.Empty);
         }
     }
 }

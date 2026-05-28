@@ -1,0 +1,101 @@
+{
+  "entities": {
+    "player": {
+      "default": {
+        "visualId": "player.default",
+        "builder": "primitive-assembly",
+        "positionYOffset": 0,
+        "facingMode": "rotate-y",
+        "walkBobAmplitude": 0.09,
+        "walkBobSpeed": 8,
+        "parts": [
+          {
+            "shape": "capsule",
+            "dimensions": { "x": 0.8, "y": 1.75, "z": 0.8 },
+            "position": { "x": 0, "y": 0.88, "z": 0 },
+            "color": "#d9b38c"
+          },
+          {
+            "shape": "sphere",
+            "dimensions": { "x": 0.52, "y": 0.52, "z": 0.52 },
+            "position": { "x": 0, "y": 1.92, "z": 0.1 },
+            "color": "#f2d2b0"
+          },
+          {
+            "shape": "box",
+            "dimensions": { "x": 0.7, "y": 0.55, "z": 0.35 },
+            "position": { "x": 0, "y": 1.18, "z": -0.22 },
+            "color": "#3f5b7d"
+          },
+          {
+            "shape": "box",
+            "dimensions": { "x": 0.2, "y": 0.85, "z": 0.2 },
+            "position": { "x": -0.32, "y": 0.82, "z": 0.02 },
+            "color": "#6f4b2d"
+          },
+          {
+            "shape": "box",
+            "dimensions": { "x": 0.2, "y": 0.85, "z": 0.2 },
+            "position": { "x": 0.32, "y": 0.82, "z": 0.02 },
+            "color": "#6f4b2d"
+          }
+        ]
+      },
+      "player.default": {
+        "visualId": "player.default",
+        "builder": "primitive-assembly",
+        "positionYOffset": 0,
+        "facingMode": "rotate-y",
+        "walkBobAmplitude": 0.09,
+        "walkBobSpeed": 8,
+        "parts": [
+          {
+            "shape": "capsule",
+            "dimensions": { "x": 0.8, "y": 1.75, "z": 0.8 },
+            "position": { "x": 0, "y": 0.88, "z": 0 },
+            "color": "#d9b38c"
+          },
+          {
+            "shape": "sphere",
+            "dimensions": { "x": 0.52, "y": 0.52, "z": 0.52 },
+            "position": { "x": 0, "y": 1.92, "z": 0.1 },
+            "color": "#f2d2b0"
+          },
+          {
+            "shape": "box",
+            "dimensions": { "x": 0.7, "y": 0.55, "z": 0.35 },
+            "position": { "x": 0, "y": 1.18, "z": -0.22 },
+            "color": "#3f5b7d"
+          },
+          {
+            "shape": "box",
+            "dimensions": { "x": 0.2, "y": 0.85, "z": 0.2 },
+            "position": { "x": -0.32, "y": 0.82, "z": 0.02 },
+            "color": "#6f4b2d"
+          },
+          {
+            "shape": "box",
+            "dimensions": { "x": 0.2, "y": 0.85, "z": 0.2 },
+            "position": { "x": 0.32, "y": 0.82, "z": 0.02 },
+            "color": "#6f4b2d"
+          }
+        ]
+      },
+      "player.sprite-default": {
+        "visualId": "player.sprite-default",
+        "builder": "sprite-billboard",
+        "spriteSheetFileId": "spritesheet.player",
+        "frameWidth": 32,
+        "frameHeight": 32,
+        "animations": {
+          "idleDown": "player-idle-down",
+          "idleUp": "player-idle-up",
+          "idleSide": "player-idle-side",
+          "walkDown": "player-walk-down",
+          "walkUp": "player-walk-up",
+          "walkSide": "player-walk-side"
+        }
+      }
+    }
+  }
+}

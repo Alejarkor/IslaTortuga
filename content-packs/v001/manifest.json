@@ -1,7 +1,7 @@
 {
   "contentPackId": "islatortuga-v001",
   "version": "v001",
-  "mapId": "test-map",
+  "sceneId": "scene.prototype-3d",
   "files": [
     {
       "id": "spritesheet.player",
@@ -16,6 +16,13 @@
       "url": "/content/v001/maps/test-map.tmj",
       "hash": "sha256-011b8e015c78a699beb7abfd18ff3bdae714b6264c452b4f137366a046c0f482",
       "size": 22062
+    },
+    {
+      "id": "map.island_01",
+      "type": "map",
+      "url": "/content/v001/maps/island_01.tmj",
+      "hash": "sha256-654080bb5ada3c42706ad2e5591ccb9e19c05c5b9832e0479f4f64703dc2dd80",
+      "size": 26396
     },
     {
       "id": "tileset.tx-tileset-grass",
@@ -39,31 +46,38 @@
       "size": 65183
     },
     {
-      "id": "definitions.visuals",
+      "id": "definitions.scenes",
       "type": "json",
-      "url": "/content/v001/definitions/visual-definitions.json",
-      "hash": "sha256-pending",
-      "size": 1562
+      "url": "/content/v001/definitions/scene-definitions.json",
+      "hash": "sha256-ff8e20193517f86db51009c1abf9d34ecb2bff8e4c3dd36a8e84195bcbc7ac1e",
+      "size": 4587
+    },
+    {
+      "id": "definitions.entityVisuals",
+      "type": "json",
+      "url": "/content/v001/definitions/entity-visual-definitions.json",
+      "hash": "sha256-26498bf72d9cc4ce01b36d8b87fd9a7f0905aca6c4f898abace734d50cbb2085",
+      "size": 3137
     },
     {
       "id": "definitions.entityArchetypes",
       "type": "json",
       "url": "/content/v001/definitions/entity-archetypes.json",
-      "hash": "sha256-pending",
-      "size": 92
+      "hash": "sha256-99b139462679cbfb45a6d7dc4a0d9df3e05fe741b118a02b94bc105d0e578bef",
+      "size": 163
     },
     {
       "id": "definitions.itemDefinitions",
       "type": "json",
       "url": "/content/v001/definitions/item-definitions.json",
-      "hash": "sha256-pending",
+      "hash": "sha256-0343639fac1511a32a4c9a92c7655a6e9f9ad3a600fc6f30b5bdad6806160a97",
       "size": 18
     },
     {
       "id": "definitions.rules",
       "type": "json",
       "url": "/content/v001/definitions/rules.json",
-      "hash": "sha256-pending",
+      "hash": "sha256-65c4d1242232751dde1be78ea6a221ba34135cc1d7306f28735fb6af84f484cf",
       "size": 48
     }
   ]
