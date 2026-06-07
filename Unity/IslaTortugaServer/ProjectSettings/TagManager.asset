@@ -11,13 +11,13 @@ TagManager:
   - 
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Scene_Visual
+  - Scene_Collision
+  - Scene_Trigger
+  - Scene_Spawn
+  - Scene_Transition
+  - Scene_Audio
+  - Scene_Ignore
   - 
   - 
   - 

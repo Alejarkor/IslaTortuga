@@ -1,15 +1,12 @@
 export type ContentFileType =
   | 'scene'
-  | 'terrain'
-  | 'map'
   | 'model'
   | 'image'
   | 'texture'
   | 'material'
   | 'audio'
   | 'animation'
-  | 'json'
-  | 'spritesheet';
+  | 'json';
 
 export type ContentFileEntry = {
   id: string;
@@ -24,17 +21,6 @@ export type ContentManifest = {
   version: string;
   sceneId: string;
   files: ContentFileEntry[];
-};
-
-export type MapTilesetDefinition = {
-  tilesetName: string;
-  textureKey: string;
-  imageFileId: string;
-};
-
-export type MapVisualDefinition = {
-  mapFileId: string;
-  tilesets: MapTilesetDefinition[];
 };
 
 export type Vector3Definition = {
@@ -54,12 +40,6 @@ export type PrimitivePartDefinition = {
   color?: string;
   emissiveColor?: string;
   alpha?: number;
-};
-
-export type TiledSceneDefinition = {
-  sceneId: string;
-  builder: 'tiled-map';
-  mapVisualId: string;
 };
 
 export type PrimitiveScenePropDefinition = {
@@ -88,29 +68,106 @@ export type PrimitiveSceneDefinition = {
   };
 };
 
-export type SceneDefinition = TiledSceneDefinition | PrimitiveSceneDefinition;
+export type UnitySceneExportSceneDefinition = {
+  sceneId: string;
+  builder: 'unity-scene-export';
+  sceneDataFileId: string;
+};
+
+export type SceneDefinition = PrimitiveSceneDefinition | UnitySceneExportSceneDefinition;
 
 export type SceneDefinitions = {
   scenes: Record<string, SceneDefinition>;
-  mapVisuals: Record<string, MapVisualDefinition>;
 };
 
-export type PlayerAnimationDefinition = {
-  idleDown: string;
-  idleUp: string;
-  idleSide: string;
-  walkDown: string;
-  walkUp: string;
-  walkSide: string;
+export type UnitySceneExportBoundsDefinition = {
+  width: number;
+  depth: number;
 };
 
-export type SpriteBillboardEntityVisualDefinition = {
-  visualId: string;
-  builder: 'sprite-billboard';
-  spriteSheetFileId: string;
-  frameWidth: number;
-  frameHeight: number;
-  animations: PlayerAnimationDefinition;
+export type UnitySceneExportSpawnPointDefinition = {
+  spawnId: string;
+  spawnType: string;
+  facing?: string;
+  position: Vector3Definition;
+};
+
+export type UnitySceneExportTransitionTriggerDefinition = {
+  type: PrimitiveShape;
+  center: Vector3Definition;
+  size?: Vector3Definition;
+  radius?: number;
+  height?: number;
+  axis?: 'x' | 'y' | 'z';
+};
+
+export type UnitySceneExportTransitionDefinition = {
+  transitionId: string;
+  targetSceneId: string;
+  targetSpawnId: string;
+  instanceMode: 'shared' | 'per_player' | 'per_party' | 'named' | string;
+  namedInstanceId?: string | null;
+  trigger?: UnitySceneExportTransitionTriggerDefinition;
+};
+
+export type UnitySceneExportColliderShapeDefinition =
+  | {
+      type: 'box';
+      center: Vector3Definition;
+      size: Vector3Definition;
+    }
+  | {
+      type: 'sphere';
+      center: Vector3Definition;
+      radius: number;
+    }
+  | {
+      type: 'capsule' | 'cylinder';
+      center: Vector3Definition;
+      radius: number;
+      height: number;
+      axis?: 'x' | 'y' | 'z';
+    };
+
+export type UnitySceneExportColliderDefinition = {
+  colliderId: string;
+  colliderKind: string;
+  clientCollision: 'none' | 'simple' | 'full' | string;
+  shape: UnitySceneExportColliderShapeDefinition;
+};
+
+export type UnitySceneExportPropDefinition = {
+  propId: string;
+  visualAssetId?: string;
+  exportMode?: string;
+  staticCollisionSource?: string;
+  position: Vector3Definition;
+  rotation?: Partial<Vector3Definition>;
+  scale?: Partial<Vector3Definition>;
+  linkedColliderIds?: string[];
+};
+
+export type UnitySceneExportLightDefinition = {
+  lightType: 'directional' | 'point' | 'spot' | 'hemispheric' | string;
+  position?: Partial<Vector3Definition>;
+  rotation?: Partial<Vector3Definition>;
+  color?: string;
+  intensity?: number;
+  range?: number;
+};
+
+export type UnitySceneExportSceneData = {
+  sceneId: string;
+  displayName?: string;
+  builder: 'unity-scene-export';
+  coordinateScale?: number;
+  bounds: UnitySceneExportBoundsDefinition;
+  spawnPoints?: UnitySceneExportSpawnPointDefinition[];
+  transitions?: UnitySceneExportTransitionDefinition[];
+  colliders?: UnitySceneExportColliderDefinition[];
+  props?: UnitySceneExportPropDefinition[];
+  audioEmitters?: unknown[];
+  lights?: UnitySceneExportLightDefinition[];
 };
 
 export type PrimitiveAssemblyEntityVisualDefinition = {
@@ -118,14 +175,12 @@ export type PrimitiveAssemblyEntityVisualDefinition = {
   builder: 'primitive-assembly';
   positionYOffset?: number;
   facingMode?: 'rotate-y';
-  walkBobAmplitude?: number;
-  walkBobSpeed?: number;
+  moveBobAmplitude?: number;
+  moveBobSpeed?: number;
   parts: PrimitivePartDefinition[];
 };
 
-export type EntityVisualDefinition =
-  | SpriteBillboardEntityVisualDefinition
-  | PrimitiveAssemblyEntityVisualDefinition;
+export type EntityVisualDefinition = PrimitiveAssemblyEntityVisualDefinition;
 
 export type EntityVisualDefinitions = {
   entities: Record<string, Record<string, EntityVisualDefinition>>;

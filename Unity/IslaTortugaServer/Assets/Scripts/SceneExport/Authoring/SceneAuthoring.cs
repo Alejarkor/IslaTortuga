@@ -126,16 +126,19 @@ namespace IslaTortuga.Unity.SceneExport.Authoring
         public DefaultSceneInstanceKind DefaultSceneInstanceKind
         {
             get { return defaultSceneInstanceKind; }
+            set { defaultSceneInstanceKind = value; }
         }
 
         public bool IncludeLighting
         {
             get { return includeLighting; }
+            set { includeLighting = value; }
         }
 
         public bool IncludeAudio
         {
             get { return includeAudio; }
+            set { includeAudio = value; }
         }
     }
 
@@ -151,6 +154,7 @@ namespace IslaTortuga.Unity.SceneExport.Authoring
         public bool Export
         {
             get { return export; }
+            set { export = value; }
         }
 
         public string ColliderId
@@ -162,16 +166,19 @@ namespace IslaTortuga.Unity.SceneExport.Authoring
         public SceneColliderKind ColliderKind
         {
             get { return colliderKind; }
+            set { colliderKind = value; }
         }
 
         public SceneColliderShapeOverride ShapeOverride
         {
             get { return shapeOverride; }
+            set { shapeOverride = value; }
         }
 
         public SceneClientCollisionMode ClientCollision
         {
             get { return clientCollision; }
+            set { clientCollision = value; }
         }
     }
 
@@ -186,6 +193,7 @@ namespace IslaTortuga.Unity.SceneExport.Authoring
         public bool Export
         {
             get { return export; }
+            set { export = value; }
         }
 
         public string SpawnId
@@ -197,11 +205,13 @@ namespace IslaTortuga.Unity.SceneExport.Authoring
         public SceneSpawnType SpawnType
         {
             get { return spawnType; }
+            set { spawnType = value; }
         }
 
         public SceneFacingDirection Facing
         {
             get { return facing; }
+            set { facing = value; }
         }
     }
 
@@ -220,6 +230,7 @@ namespace IslaTortuga.Unity.SceneExport.Authoring
         public bool Export
         {
             get { return export; }
+            set { export = value; }
         }
 
         public string TransitionId
@@ -231,26 +242,31 @@ namespace IslaTortuga.Unity.SceneExport.Authoring
         public string TargetSceneId
         {
             get { return targetSceneId; }
+            set { targetSceneId = value; }
         }
 
         public string TargetSpawnId
         {
             get { return targetSpawnId; }
+            set { targetSpawnId = value; }
         }
 
         public SceneTransitionInstanceMode InstanceMode
         {
             get { return instanceMode; }
+            set { instanceMode = value; }
         }
 
         public string NamedInstanceId
         {
             get { return namedInstanceId; }
+            set { namedInstanceId = value; }
         }
 
         public SceneTransitionShape TransitionShape
         {
             get { return transitionShape; }
+            set { transitionShape = value; }
         }
     }
 
@@ -266,6 +282,7 @@ namespace IslaTortuga.Unity.SceneExport.Authoring
         public bool Export
         {
             get { return export; }
+            set { export = value; }
         }
 
         public string PropId
@@ -277,16 +294,19 @@ namespace IslaTortuga.Unity.SceneExport.Authoring
         public string VisualAssetId
         {
             get { return visualAssetId; }
+            set { visualAssetId = value; }
         }
 
         public ScenePropExportMode ExportMode
         {
             get { return exportMode; }
+            set { exportMode = value; }
         }
 
         public SceneStaticCollisionSource StaticCollisionSource
         {
             get { return staticCollisionSource; }
+            set { staticCollisionSource = value; }
         }
     }
 
@@ -302,26 +322,31 @@ namespace IslaTortuga.Unity.SceneExport.Authoring
         public bool Export
         {
             get { return export; }
+            set { export = value; }
         }
 
         public string AudioEventId
         {
             get { return audioEventId; }
+            set { audioEventId = value; }
         }
 
         public float Radius
         {
             get { return radius; }
+            set { radius = value; }
         }
 
         public bool Loop
         {
             get { return loop; }
+            set { loop = value; }
         }
 
         public bool Spatial
         {
             get { return spatial; }
+            set { spatial = value; }
         }
     }
 
@@ -337,26 +362,31 @@ namespace IslaTortuga.Unity.SceneExport.Authoring
         public bool Export
         {
             get { return export; }
+            set { export = value; }
         }
 
         public SceneLightType LightType
         {
             get { return lightType; }
+            set { lightType = value; }
         }
 
         public Color Color
         {
             get { return color; }
+            set { color = value; }
         }
 
         public float Intensity
         {
             get { return intensity; }
+            set { intensity = value; }
         }
 
         public float Range
         {
             get { return range; }
+            set { range = value; }
         }
     }
 }

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using IslaTortuga.Server.Core.Sessions;
-using IslaTortuga.Server.Core.World.Tiled;
+using IslaTortuga.Server.Core.World.Scenes;
 using UnityEngine;
 
 namespace IslaTortuga.Server.Core.World
@@ -50,7 +50,7 @@ namespace IslaTortuga.Server.Core.World
     {
         public string SceneId { get; set; } = string.Empty;
 
-        public string MapPath { get; set; } = string.Empty;
+        public string ScenePath { get; set; } = string.Empty;
     }
 
     public sealed class SceneContext
@@ -73,13 +73,13 @@ namespace IslaTortuga.Server.Core.World
         public SceneInstance(
             string sceneId,
             string sceneInstanceId,
-            TiledWorldMap map,
+            SceneTemplateData sceneData,
             GameObject rootObject,
             GameObject entitiesRoot)
         {
             SceneId = sceneId ?? string.Empty;
             SceneInstanceId = sceneInstanceId ?? string.Empty;
-            Map = map;
+            SceneData = sceneData;
             RootObject = rootObject;
             EntitiesRoot = entitiesRoot;
         }
@@ -88,7 +88,7 @@ namespace IslaTortuga.Server.Core.World
 
         public string SceneInstanceId { get; }
 
-        public TiledWorldMap Map { get; }
+        public SceneTemplateData SceneData { get; }
 
         public GameObject RootObject { get; }
 
@@ -99,20 +99,20 @@ namespace IslaTortuga.Server.Core.World
             get { return EntitiesRoot.transform; }
         }
 
-        public (float X, float Y) GetNextSpawnPoint()
+        public (float X, float Z) GetNextSpawnPoint()
         {
-            var spawnPoints = Map.GetSpawnPoints();
+            var spawnPoints = SceneData.SpawnPoints;
 
             if (spawnPoints.Count == 0)
             {
                 return (
-                    Map.Width * Map.TileWidth * 0.5f,
-                    Map.Height * Map.TileHeight * 0.5f);
+                    SceneData.BoundsWidth * 0.5f,
+                    SceneData.BoundsDepth * 0.5f);
             }
 
             var spawn = spawnPoints[_spawnCursor % spawnPoints.Count];
             _spawnCursor++;
-            return (spawn.X, spawn.Y);
+            return (spawn.X, spawn.Z);
         }
     }
 
@@ -121,7 +121,7 @@ namespace IslaTortuga.Server.Core.World
         private const float SceneSpacing = 1000f;
         private readonly object _sync = new object();
         private readonly GameObject _scenesRoot;
-        private readonly TiledWorldBuilder _tiledWorldBuilder;
+        private readonly SceneTemplateBuilder _sceneTemplateBuilder;
         private readonly Dictionary<string, SceneTemplateDefinition> _templatesBySceneId;
         private readonly Dictionary<string, SceneInstance> _instancesByKey = new Dictionary<string, SceneInstance>();
         private readonly string _defaultSceneId;
@@ -129,12 +129,12 @@ namespace IslaTortuga.Server.Core.World
 
         public SceneInstanceManager(
             GameObject scenesRoot,
-            TiledWorldBuilder tiledWorldBuilder,
+            SceneTemplateBuilder sceneTemplateBuilder,
             string defaultSceneId,
             IReadOnlyList<SceneTemplateDefinition> sceneTemplates)
         {
             _scenesRoot = scenesRoot;
-            _tiledWorldBuilder = tiledWorldBuilder;
+            _sceneTemplateBuilder = sceneTemplateBuilder;
             _defaultSceneId = string.IsNullOrWhiteSpace(defaultSceneId) ? "scene.default" : defaultSceneId;
             _templatesBySceneId = new Dictionary<string, SceneTemplateDefinition>(StringComparer.OrdinalIgnoreCase);
 
@@ -142,7 +142,7 @@ namespace IslaTortuga.Server.Core.World
             for (var index = 0; index < templates.Count; index++)
             {
                 var template = templates[index];
-                if (template == null || string.IsNullOrWhiteSpace(template.SceneId) || string.IsNullOrWhiteSpace(template.MapPath))
+                if (template == null || string.IsNullOrWhiteSpace(template.SceneId) || string.IsNullOrWhiteSpace(template.ScenePath))
                 {
                     continue;
                 }
@@ -169,7 +169,7 @@ namespace IslaTortuga.Server.Core.World
                 }
 
                 var template = ResolveTemplate(resolvedSceneId);
-                var map = _tiledWorldBuilder.BuildFromFile(template.MapPath);
+                var sceneData = _sceneTemplateBuilder.BuildFromFile(template.ScenePath);
                 var rootObject = new GameObject("SceneInstance:" + resolvedSceneId + ":" + resolvedInstanceId);
                 rootObject.transform.SetParent(_scenesRoot.transform, false);
                 rootObject.transform.position = ResolveSceneOffset(_nextInstanceIndex++);
@@ -177,7 +177,7 @@ namespace IslaTortuga.Server.Core.World
                 var entitiesRoot = new GameObject("Entities");
                 entitiesRoot.transform.SetParent(rootObject.transform, false);
 
-                var instance = new SceneInstance(resolvedSceneId, resolvedInstanceId, map, rootObject, entitiesRoot);
+                var instance = new SceneInstance(resolvedSceneId, resolvedInstanceId, sceneData, rootObject, entitiesRoot);
                 _instancesByKey[key] = instance;
                 return instance;
             }
@@ -289,7 +289,7 @@ namespace IslaTortuga.Server.Core.World
                             sceneInstance.SceneInstanceId,
                             sceneInstance.EntityRoot,
                             relocationSpawn.X,
-                            relocationSpawn.Y);
+                            relocationSpawn.Z);
                     }
 
                     existingPlayer.AttachSession(session.SessionId);
@@ -323,7 +323,7 @@ namespace IslaTortuga.Server.Core.World
                             session.DisplayName,
                             visualId,
                             spawn.X,
-                            spawn.Y);
+                            spawn.Z);
                         entity.AttachSession(session.SessionId);
                     });
 
@@ -485,7 +485,7 @@ namespace IslaTortuga.Server.Core.World
             string worldId,
             string defaultSceneId,
             IReadOnlyList<SceneTemplateDefinition> sceneTemplates,
-            TiledWorldBuilder tiledWorldBuilder,
+            SceneTemplateBuilder sceneTemplateBuilder,
             ServerNetworkSpawnerOptions spawnerOptions)
         {
             WorldId = worldId;
@@ -495,7 +495,7 @@ namespace IslaTortuga.Server.Core.World
             UnityEngine.Object.DontDestroyOnLoad(_worldRoot);
             SceneInstances = new SceneInstanceManager(
                 _scenesRoot,
-                tiledWorldBuilder,
+                sceneTemplateBuilder,
                 defaultSceneId,
                 sceneTemplates);
             Spawner = new ServerNetworkSpawner(_scenesRoot.transform, Entities, spawnerOptions);
@@ -503,9 +503,9 @@ namespace IslaTortuga.Server.Core.World
 
         public string WorldId { get; }
 
-        public TiledWorldMap Map
+        public SceneTemplateData SceneData
         {
-            get { return SceneInstances.DefaultSceneInstance.Map; }
+            get { return SceneInstances.DefaultSceneInstance.SceneData; }
         }
 
         public EntityManager Entities { get; } = new EntityManager();
@@ -540,7 +540,7 @@ namespace IslaTortuga.Server.Core.World
                 targetSceneInstance.SceneInstanceId,
                 targetSceneInstance.EntityRoot,
                 spawnPoint.X,
-                spawnPoint.Y);
+                spawnPoint.Z);
             return targetSceneInstance;
         }
 

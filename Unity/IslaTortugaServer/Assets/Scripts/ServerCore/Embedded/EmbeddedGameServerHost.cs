@@ -7,13 +7,13 @@ using IslaTortuga.Server.Core.Replication;
 using IslaTortuga.Server.Core.Rooms;
 using IslaTortuga.Server.Core.Sessions;
 using IslaTortuga.Server.Core.World;
-using IslaTortuga.Server.Core.World.Tiled;
+using IslaTortuga.Server.Core.World.Scenes;
 
 namespace IslaTortuga.Server.Core.Embedded
 {
     public sealed class EmbeddedGameServerHostOptions
     {
-        public string DefaultMapPath { get; set; } = string.Empty;
+        public string DefaultScenePath { get; set; } = string.Empty;
 
         public string DefaultSceneId { get; set; } = "scene.default";
 
@@ -92,22 +92,22 @@ namespace IslaTortuga.Server.Core.Embedded
 
         public EmbeddedGameServerHost(EmbeddedGameServerHostOptions options)
         {
-            if (string.IsNullOrWhiteSpace(options.DefaultMapPath))
+            if (string.IsNullOrWhiteSpace(options.DefaultScenePath))
             {
-                throw new ArgumentException("DefaultMapPath is required to bootstrap the embedded game server.", nameof(options));
+                throw new ArgumentException("DefaultScenePath is required to bootstrap the embedded game server.", nameof(options));
             }
 
             TickDeltaSeconds = options.TickDeltaSeconds <= 0 ? 0.05f : options.TickDeltaSeconds;
-            MapPath = options.DefaultMapPath;
+            ScenePath = options.DefaultScenePath;
 
             _gameTicketService = new GameTicketService(options.TicketSecret);
             _sessionManager = new SessionManager();
 
-            var tiledWorldBuilder = new TiledWorldBuilder();
+            var sceneTemplateBuilder = new SceneTemplateBuilder();
             _gameRoomManager = new GameRoomManager(
                 new GameRoomManagerOptions
                 {
-                    DefaultMapPath = options.DefaultMapPath,
+                    DefaultScenePath = options.DefaultScenePath,
                     DefaultSceneId = options.DefaultSceneId,
                     DefaultRoomId = options.DefaultRoomId,
                     DefaultWorldId = options.DefaultWorldId,
@@ -116,7 +116,7 @@ namespace IslaTortuga.Server.Core.Embedded
                     PrefabDefinitions = options.PrefabDefinitions,
                     SceneTemplates = options.SceneTemplates,
                 },
-                tiledWorldBuilder);
+                sceneTemplateBuilder);
 
             _deltaBuilder = new DeltaBuilder(
                 new InterestManager(),
@@ -126,11 +126,11 @@ namespace IslaTortuga.Server.Core.Embedded
 
         public float TickDeltaSeconds { get; }
 
-        public string MapPath { get; }
+        public string ScenePath { get; }
 
-        public string MapName
+        public string SceneName
         {
-            get { return _gameRoomManager.DefaultRoom.World.Map.Name; }
+            get { return _gameRoomManager.DefaultRoom.World.SceneData.DisplayName; }
         }
 
         public int RoomCount

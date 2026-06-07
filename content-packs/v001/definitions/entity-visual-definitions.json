@@ -6,8 +6,8 @@
         "builder": "primitive-assembly",
         "positionYOffset": 0,
         "facingMode": "rotate-y",
-        "walkBobAmplitude": 0.09,
-        "walkBobSpeed": 8,
+        "moveBobAmplitude": 0.09,
+        "moveBobSpeed": 8,
         "parts": [
           {
             "shape": "capsule",
@@ -46,8 +46,8 @@
         "builder": "primitive-assembly",
         "positionYOffset": 0,
         "facingMode": "rotate-y",
-        "walkBobAmplitude": 0.09,
-        "walkBobSpeed": 8,
+        "moveBobAmplitude": 0.09,
+        "moveBobSpeed": 8,
         "parts": [
           {
             "shape": "capsule",
@@ -80,21 +80,6 @@
             "color": "#6f4b2d"
           }
         ]
-      },
-      "player.sprite-default": {
-        "visualId": "player.sprite-default",
-        "builder": "sprite-billboard",
-        "spriteSheetFileId": "spritesheet.player",
-        "frameWidth": 32,
-        "frameHeight": 32,
-        "animations": {
-          "idleDown": "player-idle-down",
-          "idleUp": "player-idle-up",
-          "idleSide": "player-idle-side",
-          "walkDown": "player-walk-down",
-          "walkUp": "player-walk-up",
-          "walkSide": "player-walk-side"
-        }
       }
     }
   }

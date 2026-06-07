@@ -48,7 +48,7 @@ public static class DevGameEndpoints
                 .Select(room => new RoomSummaryResponse(
                     room.RoomId,
                     room.State.ToString(),
-                    room.World.Map.Name,
+                    room.World.SceneData.DisplayName,
                     room.Players.Count))
                 .ToArray();
 
@@ -74,6 +74,6 @@ public static class DevGameEndpoints
     private sealed record RoomSummaryResponse(
         string RoomId,
         string State,
-        string MapName,
+        string SceneName,
         int PlayerCount);
 }

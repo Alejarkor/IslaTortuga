@@ -8,7 +8,7 @@ using IslaTortuga.Server.Networking;
 using IslaTortuga.Server.Replication;
 using IslaTortuga.Server.Rooms;
 using IslaTortuga.Server.Sessions;
-using IslaTortuga.Server.World.Tiled;
+using IslaTortuga.Server.World;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls($"http://0.0.0.0:{ResolveGameServerPort()}");
@@ -23,7 +23,7 @@ builder.Services.AddSingleton<ContentIndexLoader>();
 builder.Services.AddSingleton<ConnectionManager>();
 builder.Services.AddSingleton<MessageDispatcher>();
 builder.Services.AddSingleton<WebSocketGateway>();
-builder.Services.AddSingleton<TiledWorldBuilder>();
+builder.Services.AddSingleton<SceneTemplateBuilder>();
 builder.Services.AddSingleton<GameRoomManager>();
 builder.Services.AddSingleton<InterestManager>();
 builder.Services.AddSingleton<EntityReplicator>();
@@ -41,8 +41,9 @@ app.UseWebSockets(new WebSocketOptions
 if (Directory.Exists(contentRootPath))
 {
     var contentTypeProvider = new FileExtensionContentTypeProvider();
-    contentTypeProvider.Mappings[".tmj"] = "application/json";
-    contentTypeProvider.Mappings[".tsx"] = "application/xml";
+    contentTypeProvider.Mappings[".gltf"] = "model/gltf+json";
+    contentTypeProvider.Mappings[".glb"] = "model/gltf-binary";
+    contentTypeProvider.Mappings[".bin"] = "application/octet-stream";
 
     app.UseStaticFiles(new StaticFileOptions
     {

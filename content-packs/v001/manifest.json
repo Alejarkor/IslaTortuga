@@ -1,63 +1,21 @@
 {
   "contentPackId": "islatortuga-v001",
   "version": "v001",
-  "sceneId": "scene.prototype-3d",
+  "sceneId": "scene.test.plain",
   "files": [
-    {
-      "id": "spritesheet.player",
-      "type": "spritesheet",
-      "url": "/content/v001/sprites/characters/TX Player.png",
-      "hash": "sha256-4d69431f5b4fc56d22ab87f95e6dbecf50796e3178c13c59a0885eaf74e8078d",
-      "size": 2523
-    },
-    {
-      "id": "map.test-map",
-      "type": "map",
-      "url": "/content/v001/maps/test-map.tmj",
-      "hash": "sha256-011b8e015c78a699beb7abfd18ff3bdae714b6264c452b4f137366a046c0f482",
-      "size": 22062
-    },
-    {
-      "id": "map.island_01",
-      "type": "map",
-      "url": "/content/v001/maps/island_01.tmj",
-      "hash": "sha256-654080bb5ada3c42706ad2e5591ccb9e19c05c5b9832e0479f4f64703dc2dd80",
-      "size": 26396
-    },
-    {
-      "id": "tileset.tx-tileset-grass",
-      "type": "image",
-      "url": "/content/v001/tilesets/TX Tileset Grass.png",
-      "hash": "sha256-3afee45fa3ab4f2908114d5caa84fad20df568e276782550d3e9548e4e40a555",
-      "size": 11016
-    },
-    {
-      "id": "tileset.tx-props",
-      "type": "image",
-      "url": "/content/v001/tilesets/TX Props.png",
-      "hash": "sha256-bc100749fcf3cc9008a0078454f704bc63f9000d6f3e4a91574b83da098fa71e",
-      "size": 86563
-    },
-    {
-      "id": "tileset.tx-plant",
-      "type": "image",
-      "url": "/content/v001/tilesets/TX Plant.png",
-      "hash": "sha256-77b5289f0e85f8e0f059c672ab620208db861e82ecedec615551562032e3752c",
-      "size": 65183
-    },
     {
       "id": "definitions.scenes",
       "type": "json",
       "url": "/content/v001/definitions/scene-definitions.json",
-      "hash": "sha256-ff8e20193517f86db51009c1abf9d34ecb2bff8e4c3dd36a8e84195bcbc7ac1e",
-      "size": 4587
+      "hash": "sha256-be7bc798134c10d859f9b213b67c1cbdd8ec9fee78197b4c769ed42b95995f5d",
+      "size": 180
     },
     {
       "id": "definitions.entityVisuals",
       "type": "json",
       "url": "/content/v001/definitions/entity-visual-definitions.json",
-      "hash": "sha256-26498bf72d9cc4ce01b36d8b87fd9a7f0905aca6c4f898abace734d50cbb2085",
-      "size": 3137
+      "hash": "sha256-a9020594a40b145ab37486044b59c7074fe3ee578e9ee20245caf7f5fe6ebad4",
+      "size": 2630
     },
     {
       "id": "definitions.entityArchetypes",
@@ -79,6 +37,13 @@
       "url": "/content/v001/definitions/rules.json",
       "hash": "sha256-65c4d1242232751dde1be78ea6a221ba34135cc1d7306f28735fb6af84f484cf",
       "size": 48
+    },
+    {
+      "id": "scene.scene.test.plain",
+      "type": "scene",
+      "url": "/content/v001/scenes/scene.test.plain.json",
+      "hash": "sha256-82510801f015d94d6df261641507e2a1fd89cf89a2f3308784f057ec885966f5",
+      "size": 2654
     }
   ]
 }

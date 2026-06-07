@@ -1,144 +1,33 @@
-# Migracion del Servidor a Unity
+# Unity Bootstrap
 
 ## Resumen
 
-El repositorio ya contiene un proyecto Unity real en [Unity/IslaTortugaServer](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer). El servidor autoritativo de juego se ha empezado a migrar ahi como runtime embebido.
+La direccion actual del proyecto es:
 
-Para meter el servidor dentro de Unity sin romperlo, la migracion debe hacerse en dos capas:
+- servidor autoritativo dentro de Unity
+- cliente web 3D en Babylon
+- escenas cliente exportadas desde Unity a `content-packs`
 
-1. Extraer el nucleo de simulacion a una libreria embebible.
-2. Crear en Unity una escena `Bootstrap` que instancie ese runtime y conecte transporte, contenido y ciclo de tick.
+La migracion ya no busca sustituir Babylon por Unity en el cliente. Busca consolidar a Unity como host del mundo y a Babylon como renderer 3D remoto.
 
-La libreria base extraida en este repo es:
+## Piezas activas
 
-- [IslaTortuga.Server.Core.csproj](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/src/IslaTortuga.Server.Core/IslaTortuga.Server.Core.csproj)
+- [ServerBootstrapBehaviour.cs](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scripts/Bootstrap/ServerBootstrapBehaviour.cs)
+- [EmbeddedGameServerHost.cs](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scripts/ServerCore/Embedded/EmbeddedGameServerHost.cs)
+- [EmbeddedServerNetworkingHost.cs](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scripts/Networking/EmbeddedServerNetworkingHost.cs)
+- [SceneTemplateRuntime.cs](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scripts/ServerCore/World/SceneTemplateRuntime.cs)
 
-Y su integracion actual en Unity vive en:
+## Flujo esperado
 
-- [Assets/Scripts/ServerCore](</C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scripts/ServerCore>)
-- [Assets/Scripts/Bootstrap/ServerBootstrapBehaviour.cs](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scripts/Bootstrap/ServerBootstrapBehaviour.cs)
-- [Assets/Scenes/Bootstrap.unity](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scenes/Bootstrap.unity)
+1. Unity localiza `content-packs`.
+2. Resuelve la escena inicial exportada.
+3. Arranca `EmbeddedGameServerHost`.
+4. Expone opcionalmente `GET /content`, `GET /health` y `WS /ws/game`.
+5. Simula el mundo y emite `world.delta`.
+6. Babylon consume `sceneId` y renderiza la escena 3D correspondiente.
 
-## Que entra en Unity
+## Pendientes razonables
 
-- `GameTicketService`
-- `SessionManager`
-- `GameRoomManager`
-- `GameWorld`
-- `PlayerEntity`
-- `TiledWorldBuilder`
-- `SnapshotBuilder`
-- `EmbeddedGameServerHost`
-
-Todo eso ya vive desacoplado del host web y, dentro de Unity, arranca con un `MonoBehaviour` que resuelve `content-packs`, localiza el mapa y ejecuta el tick en `FixedUpdate`.
-
-## Que no conviene meter en el cliente Unity
-
-- `JWT_SECRET`
-- `DATABASE_URL`
-- Prisma/PostgreSQL
-- Auth HTTP publica
-- secretos de firma productivos
-
-Si Unity corre en maquinas de jugadores, meter ahi la base de datos o las claves de auth expone el sistema entero. Lo razonable es:
-
-- mover a Unity el servidor autoritativo de simulacion
-- mantener fuera la identidad, cuentas y persistencia sensible
-
-## Escena Bootstrap objetivo
-
-La escena `Bootstrap` deberia crear un objeto persistente con responsabilidades muy separadas:
-
-1. Resolver rutas de contenido
-2. Cargar el mapa inicial
-3. Crear `EmbeddedGameServerHost`
-4. Arrancar el tick en `FixedUpdate`
-5. Exponer snapshots al cliente local o al transporte de red que toque
-6. Mantener viva la escena con `DontDestroyOnLoad`
-
-## Integracion aplicada en Unity
-
-La escena [Bootstrap.unity](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scenes/Bootstrap.unity) ya contiene un objeto `Server Bootstrap` con [ServerBootstrapBehaviour.cs](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scripts/Bootstrap/ServerBootstrapBehaviour.cs).
-
-Ese componente:
-
-1. Marca el objeto como persistente con `DontDestroyOnLoad`
-2. Busca `content-packs` en el repo o en `StreamingAssets`
-3. Localiza el mapa `.tmj`
-4. Crea `EmbeddedGameServerHost`
-5. Opcionalmente arranca un gateway HTTP/WebSocket local dentro de Unity
-6. Ejecuta el tick del servidor en `FixedUpdate`
-7. Reenvia snapshots del runtime embebido a las conexiones WebSocket
-8. Muestra un overlay simple con estado del bootstrap y endpoints expuestos
-
-## Networking ya migrado a Unity
-
-La capa de networking del game server ahora puede vivir dentro del proyecto Unity en:
-
-- [Assets/Scripts/Networking/EmbeddedServerNetworkingHost.cs](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scripts/Networking/EmbeddedServerNetworkingHost.cs)
-- [Assets/Scripts/Networking/Protocol/Protocol.cs](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scripts/Networking/Protocol/Protocol.cs)
-
-Ese gateway embebido expone:
-
-- `GET /health`
-- `GET /content/...` contra `content-packs` cuando esta activado
-- `WS /ws/game` con el mismo contrato de `auth.join`, `auth.reconnect`, `player.input`, `ping` y `world.snapshot`
-
-Con esto el flujo autoritativo de simulacion y el transporte WebSocket dejan de depender del host ASP.NET Core para correr en desarrollo dentro de Unity.
-
-Ejemplo orientativo del mismo patron:
-
-```csharp
-using IslaTortuga.Server.Core.Embedded;
-using UnityEngine;
-
-public sealed class ServerBootstrapBehaviour : MonoBehaviour
-{
-    private EmbeddedGameServerHost _server = null!;
-
-    private void Awake()
-    {
-        DontDestroyOnLoad(gameObject);
-
-        _server = new EmbeddedGameServerHost(new EmbeddedGameServerHostOptions
-        {
-            DefaultMapPath = System.IO.Path.Combine(Application.streamingAssetsPath, "content-packs", "v001", "maps", "island_01.tmj"),
-            TickDeltaSeconds = Time.fixedDeltaTime,
-            TicketSecret = "dev_game_ticket_secret_change_me",
-        });
-    }
-
-    private void FixedUpdate()
-    {
-        var snapshots = _server.Tick();
-        // Aqui se reenvian a cliente local, bots o transporte interno.
-    }
-}
-```
-
-## Cambios pendientes para completar la migracion
-
-1. Decidir donde viviran definitivamente `content-packs` dentro de Unity:
-   - `StreamingAssets`
-   - `Addressables`
-   - pipeline propio de importacion
-2. Decidir si el transporte final se queda en este gateway WebSocket o se sustituye por un adapter de Unity Transport / Netcode.
-3. Sustituir el cliente web Babylon por cliente Unity.
-4. Reutilizar o reemplazar la API Nest para login y persistencia.
-5. Eliminar la duplicacion temporal entre `src/IslaTortuga.Server.Core` y `Assets/Scripts/ServerCore` empaquetando el core como package o ensamblado estable para Unity.
-
-## Arquitectura recomendada tras la migracion
-
-- `Unity`
-  - escena `Bootstrap`
-  - cliente visual
-  - runtime autoritativo embebido
-- `Servicio externo opcional`
-  - auth
-  - cuentas
-  - persistencia
-  - matchmaking
-
-## Siguiente paso recomendado
-
-Abrir la escena [Bootstrap.unity](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/Unity/IslaTortugaServer/Assets/Scenes/Bootstrap.unity) en Unity y comprobar que el overlay reporta el mapa cargado y el tick creciendo. A partir de ahi, el siguiente bloque natural es conectar el cliente Unity a este runtime embebido en lugar del cliente Babylon web.
+- Exportar visuales 3D mas ricos que los proxies actuales del cliente.
+- Replicar parametros de animator o hints de locomocion desde Unity al cliente.
+- Unificar o retirar el servidor C# standalone heredado en `src/IslaTortuga.Server`.

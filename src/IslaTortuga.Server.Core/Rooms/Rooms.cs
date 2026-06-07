@@ -1,6 +1,5 @@
 using IslaTortuga.Server.Core.Sessions;
 using IslaTortuga.Server.Core.World;
-using IslaTortuga.Server.Core.World.Tiled;
 
 namespace IslaTortuga.Server.Core.Rooms;
 
@@ -90,7 +89,7 @@ public sealed class GameRoom
 
 public sealed class GameRoomManagerOptions
 {
-    public string DefaultMapPath { get; set; } = string.Empty;
+    public string DefaultScenePath { get; set; } = string.Empty;
 
     public string DefaultRoomId { get; set; } = "room.default";
 
@@ -102,15 +101,15 @@ public sealed class GameRoomManager
     private readonly Dictionary<string, GameRoom> _rooms = new();
     private readonly object _sync = new();
 
-    public GameRoomManager(GameRoomManagerOptions options, TiledWorldBuilder tiledWorldBuilder)
+    public GameRoomManager(GameRoomManagerOptions options, SceneTemplateBuilder sceneTemplateBuilder)
     {
-        if (string.IsNullOrWhiteSpace(options.DefaultMapPath))
+        if (string.IsNullOrWhiteSpace(options.DefaultScenePath))
         {
-            throw new ArgumentException("DefaultMapPath is required to bootstrap the embedded game server.", nameof(options));
+            throw new ArgumentException("DefaultScenePath is required to bootstrap the embedded game server.", nameof(options));
         }
 
-        var tiledMap = tiledWorldBuilder.BuildFromFile(options.DefaultMapPath);
-        var world = new GameWorld(options.DefaultWorldId, tiledMap);
+        var sceneData = sceneTemplateBuilder.BuildFromFile(options.DefaultScenePath);
+        var world = new GameWorld(options.DefaultWorldId, sceneData);
         var room = new GameRoom(options.DefaultRoomId, world);
 
         _rooms[room.RoomId] = room;

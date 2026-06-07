@@ -1,53 +1,22 @@
-# Content Tool
+# Content Pipeline
 
-Herramienta de escritorio para importar mapas exportados desde Tiled hacia `content-packs`.
+## Estado
 
-## Arranque
+El flujo activo de contenido es 3D puro y parte de Unity.
 
-- Script de repo:
-  - `pnpm run dev:content-tool`
-- Lanzador directo:
-  - [open-content-tool.bat](/C:/Users/alejandro.langarica/Desktop/Personal/Proyectos/IslaTortuga/IslaTortuga/open-content-tool.bat)
+## Pipeline vigente
 
-## Flujo de uso
+1. Autorar la escena 3D en Unity.
+2. Exportarla al `content-pack` con builder `unity-scene-export`.
+3. Registrar la escena en `definitions/scene-definitions.json`.
+4. Publicar el `manifest.json` y los ficheros de escena para el cliente Babylon.
 
-1. Selecciona un mapa `.tmj` exportado desde Tiled
-2. Selecciona la carpeta `content-packs` del proyecto
-3. Ajusta:
-   - `Version`
-   - `ContentPackId`
-   - `MapId`
-4. Pulsa `Analizar dependencias`
-5. Si falta alguna dependencia:
-   - selecciónala en la tabla
-   - pulsa `Resolver dependencia seleccionada...`
-6. Cuando todo esté en `OK`, pulsa `Exportar al content pack`
+## Artefactos esperados
 
-## Qué hace
+- escenas exportadas en `content-packs/v001/scenes`
+- definiciones de escena y visuales 3D en `content-packs/v001/definitions`
+- modelos, materiales, texturas y animaciones 3D en los directorios de `assets`
 
-- Lee el `.tmj`
-- Detecta tilesets embebidos y tilesets externos `.tsx`
-- Convierte los `.tsx` a formato inline runtime
-- Resuelve las imágenes referenciadas por los tilesets
-- Copia mapa e imágenes a la estructura correcta del pack
-- Actualiza:
-  - `manifest.json`
-  - `visual-definitions.json`
-  - `index.json`
-- Crea archivos base en `definitions/` si faltan
+## Regla de coherencia
 
-## Destinos runtime
-
-- mapa:
-  - `content-packs/<version>/maps/<mapId>.tmj`
-- imágenes de tileset:
-  - `content-packs/<version>/tilesets/...`
-- definiciones:
-  - `content-packs/<version>/definitions/...`
-
-## Limitaciones actuales
-
-- Está pensada para mapas JSON `.tmj`
-- Soporta tilesets TSX de imagen principal
-- Tilesets TSX tipo collection-of-images no están soportados todavía
-- La herramienta actual importa mapa y dependencias de tilesets; no reemplaza aún un pipeline completo de sprites, audio y atlases
+Si aparece cualquier pipeline alternativo que no salga de Unity y no termine en escenas o visuales 3D de Babylon, debe tratarse como obsoleto y retirarse.

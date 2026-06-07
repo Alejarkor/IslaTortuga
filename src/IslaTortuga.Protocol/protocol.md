@@ -1,17 +1,15 @@
 # Isla Tortuga Protocol
 
-Contrato base de red para `IslaTortuga.Server`.
+Contrato base de red entre la API, el host autoritativo en Unity y el cliente Babylon.
 
 ## Objetivos
 
-- Mensajes JSON legibles y depurables.
-- Cliente agnóstico de lenguaje.
-- Envoltorio uniforme para operaciones websocket.
-- Tickets temporales emitidos por HTTP y consumidos una sola vez por game.
+- mensajes JSON legibles y depurables
+- cliente agnostico de implementacion
+- sesiones de juego via ticket temporal
+- carga de escenas por `sceneId`, no por estado visual incrustado en red
 
 ## Envelope
-
-Todos los mensajes websocket usan esta forma:
 
 ```json
 {
@@ -22,46 +20,47 @@ Todos los mensajes websocket usan esta forma:
 }
 ```
 
-## Flujo de entrada al juego
+## Flujo de entrada
 
-1. El usuario obtiene una cookie de sesión válida en HTTP.
-2. El cliente solicita `POST /api/game/ticket`.
-3. La API responde con un `gameTicket` válido durante 30 segundos.
-4. El cliente abre `ws://host/ws/game`.
-5. El primer mensaje es `auth.join` con el ticket.
-6. El servidor valida y consume el ticket.
-7. El servidor responde `auth.accepted`.
-8. El cliente empieza a enviar `player.input`.
+1. La API emite un `gameTicket`.
+2. El cliente abre `ws://host/ws/game`.
+3. El primer mensaje es `auth.join`.
+4. Unity valida el ticket.
+5. Unity responde `auth.accepted`.
+6. Unity envia `scene.bootstrap`.
+7. El cliente empieza a enviar `player.input`.
 
-## Flujo de reconexión
-
-1. El cliente conserva `previousSessionId`.
-2. Solicita `POST /api/game/reconnect-ticket`.
-3. La API genera un ticket temporal nuevo.
-4. El cliente envía `auth.reconnect`.
-5. El servidor reata la conexión a la sesión anterior cuando sea posible.
-
-## Operaciones iniciales
+## Operaciones activas
 
 - `auth.join`
 - `auth.reconnect`
 - `auth.accepted`
 - `auth.rejected`
+- `scene.bootstrap`
+- `scene.change`
 - `player.input`
-- `world.snapshot`
+- `world.delta`
 - `ping`
 - `pong`
 - `error`
 
-## Carga de mundo
+## Escenas
 
-El servidor consume mapas exportados por Tiled en `.tmj` con tilesets embebidos o, como mínimo, con datos suficientes para:
+El protocolo no replica una escena 3D completa por red.
 
-- layers
-- object layers
-- classes
-- types
-- custom properties
-- collision shapes en tiles
+Replica:
 
-La clase base actual es `TiledWorldBuilder`.
+- `sceneId`
+- `sceneInstanceId`
+- entidades visibles y sus cambios
+
+El cliente usa ese `sceneId` para descargar la escena exportada adecuada desde `content-packs`.
+
+## Coordenadas
+
+La simulacion actual sigue usando coordenadas planas para locomocion, pero el mundo es 3D.
+
+- `x` de red corresponde al eje `X`
+- `y` de red corresponde al desplazamiento sobre `Z` en el mundo
+
+La componente vertical se resuelve en escena, colisiones o visualizacion, no en el protocolo base actual.

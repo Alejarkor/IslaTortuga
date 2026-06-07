@@ -4,7 +4,7 @@
     {
       "contentPackId": "islatortuga-v001",
       "version": "v001",
-      "sceneId": "scene.prototype-3d",
+      "sceneId": "scene.test.plain",
       "manifestUrl": "/content/v001/manifest.json"
     }
   ]

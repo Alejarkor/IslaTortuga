@@ -12,7 +12,6 @@ import type {
 
 export type AssetCatalog = {
   scenes: Record<string, SceneDefinition>;
-  mapVisuals: SceneDefinitions['mapVisuals'];
   entityVisuals: Record<string, Record<string, EntityVisualDefinition>>;
   entityArchetypes: Record<string, EntityArchetypeDefinition>;
   definitions: AssetCatalogDefinitionFiles;
@@ -37,7 +36,7 @@ export class AssetCatalogLoader {
 
     const sceneDefinitions = (await this.fetchJson<SceneDefinitions>(
       sceneDefinitionsFile.url,
-    )) ?? { scenes: {}, mapVisuals: {} };
+    )) ?? { scenes: {} };
     const entityVisualDefinitions = (await this.fetchJson<EntityVisualDefinitions>(
       entityVisualDefinitionsFile.url,
     )) ?? { entities: {} };
@@ -47,7 +46,6 @@ export class AssetCatalogLoader {
 
     return {
       scenes: sceneDefinitions.scenes,
-      mapVisuals: sceneDefinitions.mapVisuals,
       entityVisuals: entityVisualDefinitions.entities,
       entityArchetypes: entityArchetypeDefinitions.archetypes,
       definitions: {

@@ -8,6 +8,7 @@ namespace IslaTortuga.Unity.Player
     {
         [Header("Movement")]
         [SerializeField] private float moveSpeed = 5f;
+        [SerializeField] private float runSpeed = 8f;
         [SerializeField] private float jumpHeight = 1.5f;
         [SerializeField] private float gravity = -20f;
         [SerializeField] private float groundedStickForce = -2f;
@@ -17,8 +18,17 @@ namespace IslaTortuga.Unity.Player
         [SerializeField] private bool moveRelativeToCamera = true;
         [SerializeField] private Transform cameraTransform;
 
+        [Header("Animation")]
+        [SerializeField] private Animator animator;
+
         private CharacterController _characterController;
         private Vector3 _verticalVelocity;
+
+        private static readonly int IsGroundedHash = Animator.StringToHash("isGrounded");
+        private static readonly int IsWalkingHash = Animator.StringToHash("isWalking");
+        private static readonly int IsRunningHash = Animator.StringToHash("isRunning");
+        private static readonly int VerticalSpeedHash = Animator.StringToHash("verticalSpeed");
+        private static readonly int JumpHash = Animator.StringToHash("jump");
 
         private void Awake()
         {
@@ -28,6 +38,11 @@ namespace IslaTortuga.Unity.Player
             {
                 cameraTransform = Camera.main.transform;
             }
+
+            if (animator == null)
+            {
+                animator = GetComponentInChildren<Animator>();
+            }
         }
 
         private void Update()
@@ -35,25 +50,30 @@ namespace IslaTortuga.Unity.Player
             var keyboard = Keyboard.current;
             if (keyboard == null)
             {
+                UpdateAnimatorState(false, false, false);
                 return;
             }
 
             var moveInput = ReadMovementInput(keyboard);
             var moveDirection = ResolveMoveDirection(moveInput);
+            var wantsToMove = moveDirection.sqrMagnitude > 0.001f;
+            var wantsToRun = wantsToMove && IsSprintPressed(keyboard);
+            var currentMoveSpeed = wantsToRun ? runSpeed : moveSpeed;
 
             if (_characterController.isGrounded && _verticalVelocity.y < 0f)
             {
                 _verticalVelocity.y = groundedStickForce;
             }
 
-            if (_characterController.isGrounded && keyboard.spaceKey.wasPressedThisFrame)
+            var jumpPressedThisFrame = _characterController.isGrounded && keyboard.spaceKey.wasPressedThisFrame;
+            if (jumpPressedThisFrame)
             {
                 _verticalVelocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             }
 
             _verticalVelocity.y += gravity * Time.deltaTime;
 
-            var motion = moveDirection * moveSpeed;
+            var motion = moveDirection * currentMoveSpeed;
             motion.y = _verticalVelocity.y;
 
             _characterController.Move(motion * Time.deltaTime);
@@ -62,6 +82,35 @@ namespace IslaTortuga.Unity.Player
             {
                 transform.rotation = Quaternion.LookRotation(moveDirection, Vector3.up);
             }
+
+            UpdateAnimatorState(wantsToMove, wantsToRun, jumpPressedThisFrame);
+        }
+
+        private void UpdateAnimatorState(bool wantsToMove, bool wantsToRun, bool jumpPressedThisFrame)
+        {
+            if (animator == null)
+            {
+                return;
+            }
+
+            var isGrounded = _characterController != null && _characterController.isGrounded;
+            var isRunning = isGrounded && wantsToRun;
+            var isWalking = isGrounded && wantsToMove && !isRunning;
+
+            animator.SetBool(IsGroundedHash, isGrounded);
+            animator.SetBool(IsWalkingHash, isWalking);
+            animator.SetBool(IsRunningHash, isRunning);
+            animator.SetFloat(VerticalSpeedHash, _verticalVelocity.y);
+
+            if (jumpPressedThisFrame)
+            {
+                animator.SetTrigger(JumpHash);
+            }
+        }
+
+        private static bool IsSprintPressed(Keyboard keyboard)
+        {
+            return keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
         }
 
         private static Vector2 ReadMovementInput(Keyboard keyboard)

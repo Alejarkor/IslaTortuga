@@ -2,13 +2,13 @@ using IslaTortuga.Server.Core.Protocol;
 using IslaTortuga.Server.Core.Replication;
 using IslaTortuga.Server.Core.Rooms;
 using IslaTortuga.Server.Core.Sessions;
-using IslaTortuga.Server.Core.World.Tiled;
+using IslaTortuga.Server.Core.World;
 
 namespace IslaTortuga.Server.Core.Embedded;
 
 public sealed class EmbeddedGameServerHostOptions
 {
-    public string DefaultMapPath { get; set; } = string.Empty;
+    public string DefaultScenePath { get; set; } = string.Empty;
 
     public string DefaultRoomId { get; set; } = "room.default";
 
@@ -68,9 +68,9 @@ public sealed class EmbeddedGameServerHost
 
     public EmbeddedGameServerHost(EmbeddedGameServerHostOptions options)
     {
-        if (string.IsNullOrWhiteSpace(options.DefaultMapPath))
+        if (string.IsNullOrWhiteSpace(options.DefaultScenePath))
         {
-            throw new ArgumentException("DefaultMapPath is required to bootstrap the embedded game server.", nameof(options));
+            throw new ArgumentException("DefaultScenePath is required to bootstrap the embedded game server.", nameof(options));
         }
 
         TickDeltaSeconds = options.TickDeltaSeconds <= 0 ? 0.05f : options.TickDeltaSeconds;
@@ -78,15 +78,15 @@ public sealed class EmbeddedGameServerHost
         _gameTicketService = new GameTicketService(options.TicketSecret);
         _sessionManager = new SessionManager();
 
-        var tiledWorldBuilder = new TiledWorldBuilder();
+        var sceneTemplateBuilder = new SceneTemplateBuilder();
         _gameRoomManager = new GameRoomManager(
             new GameRoomManagerOptions
             {
-                DefaultMapPath = options.DefaultMapPath,
+                DefaultScenePath = options.DefaultScenePath,
                 DefaultRoomId = options.DefaultRoomId,
                 DefaultWorldId = options.DefaultWorldId,
             },
-            tiledWorldBuilder);
+            sceneTemplateBuilder);
 
         _snapshotBuilder = new SnapshotBuilder(new InterestManager(), new EntityReplicator());
     }

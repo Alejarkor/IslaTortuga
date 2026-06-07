@@ -1,8 +1,4 @@
-import type {
-  NetworkEntityVisual,
-  PrimitiveAssemblyEntityVisual,
-  SpriteBillboardEntityVisual,
-} from './entityVisualFactory';
+import type { NetworkEntityVisual } from './entityVisualFactory';
 import type { EntityVisualFactory } from './entityVisualFactory';
 import type {
   EntitySpawnPayload,
@@ -15,7 +11,6 @@ const PLAYER_MOVE_SPEED = 4.7;
 const LOCAL_RECONCILE_FACTOR = 0.22;
 const REMOTE_INTERPOLATION_FACTOR = 0.18;
 const SNAP_DISTANCE_THRESHOLD = 1.15;
-const WALK_ANIMATION_FPS = 6;
 
 export class NetworkEntityManager {
   private readonly visuals = new Map<string, NetworkEntityVisual>();
@@ -32,6 +27,14 @@ export class NetworkEntityManager {
     if (visual) {
       visual.isLocal = true;
     }
+  }
+
+  getLocalVisual() {
+    if (!this.localEntityId) {
+      return null;
+    }
+
+    return this.visuals.get(this.localEntityId) ?? null;
   }
 
   async applyWorldDelta(delta: WorldDeltaPayload) {
@@ -65,9 +68,9 @@ export class NetworkEntityManager {
       const normalizedX = moveX / magnitude;
       const normalizedY = moveY / magnitude;
       visual.currentX += normalizedX * PLAYER_MOVE_SPEED * deltaSeconds;
-      visual.currentZ += -normalizedY * PLAYER_MOVE_SPEED * deltaSeconds;
+      visual.currentZ += normalizedY * PLAYER_MOVE_SPEED * deltaSeconds;
       visual.facing = resolveFacingFromInput(moveX, moveY, visual.facing);
-      visual.walkAccumulator += deltaSeconds;
+      visual.motionAccumulator += deltaSeconds;
       moving = true;
     }
 
@@ -103,7 +106,7 @@ export class NetworkEntityManager {
       const moving =
         distanceBetween(visual.currentX, visual.currentZ, visual.targetX, visual.targetZ) > 0.04;
       if (moving) {
-        visual.walkAccumulator += deltaSeconds;
+        visual.motionAccumulator += deltaSeconds;
       }
 
       this.applyVisualTransform(visual, moving);
@@ -155,63 +158,14 @@ export class NetworkEntityManager {
     visual.rootNode.position.x = visual.currentX;
     visual.rootNode.position.z = visual.currentZ;
 
-    if (visual.builder === 'primitive-assembly') {
-      this.applyPrimitivePresentation(visual, moving);
-      return;
-    }
-
-    visual.rootNode.position.y = visual.baseY;
-    this.renderSpriteFrame(visual, moving);
-  }
-
-  private applyPrimitivePresentation(visual: PrimitiveAssemblyEntityVisual, moving: boolean) {
-    const bobAmplitude = moving ? visual.definition.walkBobAmplitude ?? 0.08 : 0;
-    const bobSpeed = visual.definition.walkBobSpeed ?? 7.5;
+    const bobAmplitude = moving ? visual.definition.moveBobAmplitude ?? 0.08 : 0;
+    const bobSpeed = visual.definition.moveBobSpeed ?? 7.5;
     const bobOffset =
-      bobAmplitude > 0 ? Math.sin(visual.walkAccumulator * bobSpeed) * bobAmplitude : 0;
+      bobAmplitude > 0 ? Math.sin(visual.motionAccumulator * bobSpeed) * bobAmplitude : 0;
 
-    visual.rootNode.position.y = visual.baseY + bobOffset;
+    visual.rootNode.position.y = visual.currentY + bobOffset;
     visual.lastFacingYaw = lerpAngle(visual.lastFacingYaw, facingToYaw(visual.facing), 0.22);
     visual.rootNode.rotation.y = visual.lastFacingYaw;
-  }
-
-  private renderSpriteFrame(visual: SpriteBillboardEntityVisual, moving: boolean) {
-    const frame = getAnimationFrameIndex(visual.facing, moving, visual.walkAccumulator);
-    const flipX = visual.facing === 'left';
-    const frameKey = `${frame}:${flipX ? '1' : '0'}:${moving ? '1' : '0'}`;
-
-    if (frameKey === visual.lastFrameKey) {
-      return;
-    }
-
-    const context = visual.texture.getContext();
-    context.clearRect(0, 0, visual.definition.frameWidth, visual.definition.frameHeight);
-
-    if (flipX) {
-      context.save();
-      context.translate(visual.definition.frameWidth, 0);
-      context.scale(-1, 1);
-    }
-
-    context.drawImage(
-      visual.image,
-      frame * visual.definition.frameWidth,
-      0,
-      visual.definition.frameWidth,
-      visual.definition.frameHeight,
-      0,
-      0,
-      visual.definition.frameWidth,
-      visual.definition.frameHeight,
-    );
-
-    if (flipX) {
-      context.restore();
-    }
-
-    visual.texture.update(false);
-    visual.flipX = flipX;
-    visual.lastFrameKey = frameKey;
   }
 }
 
@@ -225,32 +179,6 @@ function resolveFacingFromInput(moveX: number, moveY: number, previousFacing: st
   }
 
   return moveY < 0 ? 'up' : 'down';
-}
-
-function getAnimationFrameIndex(facing: string, moving: boolean, walkAccumulator: number) {
-  if (!moving) {
-    if (facing === 'up') {
-      return 1;
-    }
-
-    if (facing === 'left' || facing === 'right') {
-      return 2;
-    }
-
-    return 0;
-  }
-
-  const walkFrame = Math.floor(walkAccumulator * WALK_ANIMATION_FPS) % 2;
-
-  if (facing === 'left' || facing === 'right') {
-    return walkFrame === 0 ? 2 : 3;
-  }
-
-  if (facing === 'up') {
-    return walkFrame === 0 ? 1 : 0;
-  }
-
-  return walkFrame === 0 ? 0 : 1;
 }
 
 function distanceBetween(ax: number, az: number, bx: number, bz: number) {

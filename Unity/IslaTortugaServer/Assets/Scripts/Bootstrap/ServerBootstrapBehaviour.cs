@@ -14,7 +14,7 @@ namespace IslaTortuga.Unity.Bootstrap
     {
         private const string DefaultRoomId = "room.default";
         private const string DefaultWorldId = "world.default";
-        private const string DefaultPreferredMap = "island_01.tmj";
+        private const string DefaultPreferredSceneAsset = "scene.test.plain.json";
         private const float DefaultServerTickRateHz = 20f;
 
         [Header("Network Gateway")]
@@ -33,7 +33,7 @@ namespace IslaTortuga.Unity.Bootstrap
         private ServerTickRunner _tickRunner;
         private Exception _startupException;
         private string _contentRoot = string.Empty;
-        private string _mapPath = string.Empty;
+        private string _scenePath = string.Empty;
         private string _defaultSceneId = "scene.default";
         private string _statusMessage = "Booting embedded server...";
 
@@ -67,9 +67,9 @@ namespace IslaTortuga.Unity.Bootstrap
 
             if (_server != null)
             {
-                GUILayout.Label("Map: " + _server.MapName);
+                GUILayout.Label("Scene Asset: " + _server.SceneName);
                 GUILayout.Label("Default Scene: " + _defaultSceneId);
-                GUILayout.Label("Map Path: " + _mapPath);
+                GUILayout.Label("Scene Path: " + _scenePath);
                 GUILayout.Label("Content Root: " + _contentRoot);
                 GUILayout.Label("Rooms: " + _server.RoomCount + " | Sessions: " + _server.SessionCount + " | Players: " + _server.PlayerCount);
                 GUILayout.Label("Tick: " + _server.CurrentTick + " @ " + DefaultServerTickRateHz + " Hz");
@@ -113,12 +113,12 @@ namespace IslaTortuga.Unity.Bootstrap
             try
             {
                 _contentRoot = ResolveContentRoot();
-                _mapPath = ResolveMapPath(_contentRoot);
+                _scenePath = ResolveScenePath(_contentRoot);
                 _defaultSceneId = ResolveDefaultSceneId(_contentRoot);
 
                 _server = new EmbeddedGameServerHost(new EmbeddedGameServerHostOptions
                 {
-                    DefaultMapPath = _mapPath,
+                    DefaultScenePath = _scenePath,
                     DefaultSceneId = _defaultSceneId,
                     DefaultRoomId = DefaultRoomId,
                     DefaultWorldId = DefaultWorldId,
@@ -127,7 +127,7 @@ namespace IslaTortuga.Unity.Bootstrap
                     DespawnDisconnectedPlayers = despawnDisconnectedPlayers,
                     PlayerDefinition = BuildPlayerDefinition(),
                     PrefabDefinitions = BuildEntityDefinitions(),
-                    SceneTemplates = BuildSceneTemplates(_contentRoot, _mapPath, _defaultSceneId),
+                    SceneTemplates = BuildSceneTemplates(_contentRoot, _scenePath, _defaultSceneId),
                 });
                 _tickRunner = new ServerTickRunner(DefaultServerTickRateHz);
 
@@ -145,7 +145,7 @@ namespace IslaTortuga.Unity.Bootstrap
                 _statusMessage = _networkGateway == null
                     ? "Embedded server running inside Unity."
                     : "Embedded server and networking gateway running inside Unity.";
-                Debug.Log("[IslaTortuga] Embedded server bootstrapped using map: " + _mapPath);
+                Debug.Log("[IslaTortuga] Embedded server bootstrapped using scene asset: " + _scenePath);
             }
             catch (Exception exception)
             {
@@ -184,21 +184,21 @@ namespace IslaTortuga.Unity.Bootstrap
             throw new DirectoryNotFoundException("No se encontro la carpeta content-packs para arrancar el servidor embebido.");
         }
 
-        private static string ResolveMapPath(string contentRoot)
+        private static string ResolveScenePath(string contentRoot)
         {
-            var preferredCandidate = Path.Combine(contentRoot, "v001", "maps", DefaultPreferredMap);
+            var preferredCandidate = Path.Combine(contentRoot, "v001", "scenes", DefaultPreferredSceneAsset);
             if (File.Exists(preferredCandidate))
             {
                 return preferredCandidate;
             }
 
-            var anyMap = Directory.GetFiles(contentRoot, "*.tmj", SearchOption.AllDirectories);
-            if (anyMap.Length > 0)
+            var anyScene = Directory.GetFiles(contentRoot, "scene.*.json", SearchOption.AllDirectories);
+            if (anyScene.Length > 0)
             {
-                return anyMap[0];
+                return anyScene[0];
             }
 
-            throw new FileNotFoundException("No se encontro ningun mapa .tmj para el bootstrap del servidor.", contentRoot);
+            throw new FileNotFoundException("No se encontro ningun archivo de escena exportada para el bootstrap del servidor.", contentRoot);
         }
 
         private static string ResolveDefaultSceneId(string contentRoot)
@@ -283,31 +283,31 @@ namespace IslaTortuga.Unity.Bootstrap
                 .ToArray();
         }
 
-        private static SceneTemplateDefinition[] BuildSceneTemplates(string contentRoot, string defaultMapPath, string defaultSceneId)
+        private static SceneTemplateDefinition[] BuildSceneTemplates(string contentRoot, string defaultScenePath, string defaultSceneId)
         {
             var templates = new List<SceneTemplateDefinition>
             {
                 new SceneTemplateDefinition
                 {
                     SceneId = defaultSceneId,
-                    MapPath = defaultMapPath,
+                    ScenePath = defaultScenePath,
                 }
             };
 
             if (Directory.Exists(contentRoot))
             {
-                foreach (var mapFile in Directory.GetFiles(contentRoot, "*.tmj", SearchOption.AllDirectories))
+                foreach (var sceneFile in Directory.GetFiles(contentRoot, "scene.*.json", SearchOption.AllDirectories))
                 {
                     templates.Add(new SceneTemplateDefinition
                     {
-                        SceneId = "scene." + Path.GetFileNameWithoutExtension(mapFile),
-                        MapPath = mapFile,
+                        SceneId = Path.GetFileNameWithoutExtension(sceneFile),
+                        ScenePath = sceneFile,
                     });
                 }
             }
 
             return templates
-                .Where(template => template != null && !string.IsNullOrWhiteSpace(template.SceneId) && !string.IsNullOrWhiteSpace(template.MapPath))
+                .Where(template => template != null && !string.IsNullOrWhiteSpace(template.SceneId) && !string.IsNullOrWhiteSpace(template.ScenePath))
                 .GroupBy(template => template.SceneId, StringComparer.OrdinalIgnoreCase)
                 .Select(group => group.First())
                 .ToArray();

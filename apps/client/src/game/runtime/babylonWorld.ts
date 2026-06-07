@@ -1,4 +1,4 @@
-import { Engine } from '@babylonjs/core';
+import { ArcRotateCamera, Engine, Vector3 } from '@babylonjs/core';
 import type { GameRuntime } from '../bootstrap/gameRuntimeRegistry';
 import { PayloadBuilder } from './payloadBuilder';
 import { EntityVisualFactory } from './entityVisualFactory';
@@ -29,6 +29,7 @@ export class BabylonWorld {
   private pendingDeltas: WorldDeltaPayload[] = [];
   private lastFrameTime = 0;
   private lastSentInput = '0:0';
+  private localPlayerVisualReady = false;
 
   constructor(canvas: HTMLCanvasElement, runtime: GameRuntime, callbacks: RuntimeCallbacks) {
     this.canvas = canvas;
@@ -68,6 +69,7 @@ export class BabylonWorld {
     this.entityManager?.dispose();
     this.entityManager = undefined;
     this.pendingDeltas = [];
+    this.localPlayerVisualReady = false;
 
     this.sceneManager?.dispose();
     this.sceneManager = undefined;
@@ -146,6 +148,12 @@ export class BabylonWorld {
     }
 
     await this.entityManager.applyWorldDelta(delta);
+
+    if (!this.localPlayerVisualReady && this.entityManager.getLocalVisual()) {
+      this.localPlayerVisualReady = true;
+      this.callbacks.onStatusChange(`Jugador local instanciado en ${delta.roomId}.`);
+    }
+
     this.callbacks.onStatusChange(`Delta ${delta.serverTick} recibido desde ${delta.roomId}.`);
   }
 
@@ -161,6 +169,7 @@ export class BabylonWorld {
 
     this.updateLocalInput(deltaSeconds);
     this.entityManager?.interpolateRemoteEntities(deltaSeconds);
+    this.updateCameraTarget(deltaSeconds);
     scene.render();
   }
 
@@ -197,6 +206,28 @@ export class BabylonWorld {
     this.keyState[event.code] = false;
   };
 
+  private updateCameraTarget(deltaSeconds: number) {
+    const scene = this.sceneManager?.currentScene?.scene;
+    const visual = this.entityManager?.getLocalVisual();
+    if (!scene || !visual) {
+      return;
+    }
+
+    const camera = scene.activeCamera;
+    if (!(camera instanceof ArcRotateCamera)) {
+      return;
+    }
+
+    const desiredTarget = new Vector3(
+      visual.rootNode.position.x,
+      visual.rootNode.position.y + 1.2,
+      visual.rootNode.position.z,
+    );
+
+    const smoothing = Math.min(deltaSeconds * 8, 1);
+    camera.target = Vector3.Lerp(camera.target, desiredTarget, smoothing);
+  }
+
   private async syncScene(payload: SceneContextPayload) {
     if (!this.sceneManager) {
       throw new Error('El gestor de escenas de red no esta disponible.');
@@ -206,8 +237,9 @@ export class BabylonWorld {
 
     if (sceneSync.didReload || !this.entityManager) {
       this.entityManager?.dispose();
-      const visualFactory = new EntityVisualFactory(this.runtime, sceneSync.scene, sceneSync.sceneContext);
+      const visualFactory = new EntityVisualFactory(this.runtime, sceneSync.sceneContext);
       this.entityManager = new NetworkEntityManager(sceneSync.sceneContext, visualFactory);
+      this.localPlayerVisualReady = false;
 
       if (this.runtime.authSession?.playerEntityId) {
         this.entityManager.setLocalEntityId(this.runtime.authSession.playerEntityId);

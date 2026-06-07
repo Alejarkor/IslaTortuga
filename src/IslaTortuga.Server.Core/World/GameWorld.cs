@@ -1,20 +1,18 @@
-using IslaTortuga.Server.Core.World.Tiled;
-
 namespace IslaTortuga.Server.Core.World;
 
 public sealed class GameWorld
 {
     private int _spawnCursor;
 
-    public GameWorld(string worldId, TiledWorldMap map)
+    public GameWorld(string worldId, SceneTemplateData sceneData)
     {
         WorldId = worldId;
-        Map = map;
+        SceneData = sceneData;
     }
 
     public string WorldId { get; }
 
-    public TiledWorldMap Map { get; }
+    public SceneTemplateData SceneData { get; }
 
     public EntityManager Entities { get; } = new();
 
@@ -22,18 +20,18 @@ public sealed class GameWorld
 
     public (float X, float Y) GetNextSpawnPoint()
     {
-        var spawnPoints = Map.GetSpawnPoints();
+        var spawnPoints = SceneData.SpawnPoints;
 
         if (spawnPoints.Count == 0)
         {
             return (
-                Map.Width * Map.TileWidth * 0.5f,
-                Map.Height * Map.TileHeight * 0.5f);
+                SceneData.BoundsWidth * 0.5f,
+                SceneData.BoundsDepth * 0.5f);
         }
 
         var spawn = spawnPoints[_spawnCursor % spawnPoints.Count];
         _spawnCursor++;
-        return ((float)spawn.X, (float)spawn.Y);
+        return (spawn.X, spawn.Z);
     }
 
     public void Tick(float deltaSeconds)

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using IslaTortuga.Server.Core.Sessions;
 using IslaTortuga.Server.Core.World;
-using IslaTortuga.Server.Core.World.Tiled;
+using IslaTortuga.Server.Core.World.Scenes;
 
 namespace IslaTortuga.Server.Core.Rooms
 {
@@ -149,7 +149,7 @@ namespace IslaTortuga.Server.Core.Rooms
 
     public sealed class GameRoomManagerOptions
     {
-        public string DefaultMapPath { get; set; } = string.Empty;
+        public string DefaultScenePath { get; set; } = string.Empty;
 
         public string DefaultSceneId { get; set; } = "scene.default";
 
@@ -172,18 +172,18 @@ namespace IslaTortuga.Server.Core.Rooms
         private readonly object _sync = new object();
         private readonly GameRoomManagerOptions _options;
 
-        public GameRoomManager(GameRoomManagerOptions options, TiledWorldBuilder tiledWorldBuilder)
+        public GameRoomManager(GameRoomManagerOptions options, SceneTemplateBuilder sceneTemplateBuilder)
         {
-            if (string.IsNullOrWhiteSpace(options.DefaultMapPath))
+            if (string.IsNullOrWhiteSpace(options.DefaultScenePath))
             {
-                throw new ArgumentException("DefaultMapPath is required to bootstrap the embedded game server.", nameof(options));
+                throw new ArgumentException("DefaultScenePath is required to bootstrap the embedded game server.", nameof(options));
             }
 
             var world = new GameWorld(
                 options.DefaultWorldId,
                 options.DefaultSceneId,
                 options.SceneTemplates,
-                tiledWorldBuilder,
+                sceneTemplateBuilder,
                 new ServerNetworkSpawnerOptions
                 {
                     PlayerDefinition = options.PlayerDefinition,

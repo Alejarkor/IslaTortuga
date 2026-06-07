@@ -329,11 +329,13 @@ namespace IslaTortuga.Unity.Networking
             switch (Path.GetExtension(path).ToLowerInvariant())
             {
                 case ".json":
-                case ".tmj":
                     return "application/json";
-                case ".tsx":
-                case ".xml":
-                    return "application/xml";
+                case ".gltf":
+                    return "model/gltf+json";
+                case ".glb":
+                    return "model/gltf-binary";
+                case ".bin":
+                    return "application/octet-stream";
                 case ".png":
                     return "image/png";
                 case ".jpg":

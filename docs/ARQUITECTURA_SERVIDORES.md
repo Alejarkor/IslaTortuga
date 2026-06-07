@@ -1,38 +1,47 @@
 # Arquitectura de Servidores
 
-## Separacion actual
+## Estado actual
 
 - `apps/server`
-  API HTTP en NestJS para auth, sesion, portal y prejuego.
+  API HTTP en NestJS para auth, sesion, portal y emision de `gameTicket`.
 
-- `src/IslaTortuga.Server`
-  Servidor de juego autoritativo en C# con WebSocket puro y mensajes JSON.
+- `Unity/IslaTortugaServer`
+  Servidor autoritativo embebido en Unity. Simula el mundo, mantiene sesiones de juego y expone `HTTP + WebSocket` cuando se activa el gateway local.
 
-- `src/IslaTortuga.Protocol`
-  Contrato de red agnostico de cliente.
+- `apps/client`
+  Cliente web con Babylon.js. Solo renderiza, interpola y envia input.
 
 - `content-packs`
-  Entrega versionada de mapas, sprites, tilesets, audio y definiciones.
+  Entrega versionada de escenas 3D exportadas desde Unity, definiciones de visuales y assets runtime.
 
-## Flujo previsto
+## Regla base
+
+- La autoridad del juego vive en Unity.
+- Babylon no decide colisiones, inventario ni transiciones finales.
+- La API Nest no simula mundo.
+- El contrato entre API, Unity y cliente se apoya en tickets, `sceneId` y mensajes JSON por WebSocket.
+
+## Flujo de juego
 
 1. El usuario inicia sesion en la API.
-2. La API valida la sesion HTTP y genera un `gameTicket`.
-3. El cliente abre websocket contra el game server.
-4. El game server consume y destruye el ticket.
-5. El game server crea o reata la `PlayerSession`.
-6. El game server simula el mundo y replica snapshots.
+2. La API emite un `gameTicket`.
+3. El cliente Babylon abre `ws://.../ws/game`.
+4. Unity valida el ticket y crea o reata la sesion de juego.
+5. Unity carga la escena exportada indicada por `sceneId`.
+6. Unity simula entidades y replica `world.delta`.
+7. Babylon interpola y actualiza visuales 3D.
 
 ## Flujo de contenido
 
-1. La API devuelve `contentPackId`, `contentVersion`, `mapId` y `manifestUrl`.
-2. El cliente descarga el `manifest.json`.
-3. `ContentDownloader` asegura en cache los archivos del pack.
-4. `AssetCatalog` carga las definiciones visuales.
-5. Solo entonces arranca Babylon.
+1. La API devuelve `contentPackId`, `version`, `sceneId` y `manifestUrl`.
+2. El cliente descarga `manifest.json`.
+3. `AssetCatalog` resuelve definiciones y archivos del pack.
+4. `NetworkSceneManager` carga la escena 3D por `sceneId`.
+5. `NetworkEntityManager` crea visuales 3D para las entidades.
 
-## Regla de organizacion
+## Decisiones activas
 
-- Nada de simulacion de juego en `apps/server`.
-- Nada de acceso directo a base de datos en el game server salvo que se disene expresamente.
-- El punto de acoplamiento entre ambos lados debe ser el protocolo y el flujo de tickets/sesion.
+- El runtime visual activo es 3D de extremo a extremo.
+- Los personajes y props se representan con visuales 3D.
+- Las escenas cliente se exportan desde Unity con builder `unity-scene-export`.
+- El servidor Unity puede seguir usando prefabs y colliders reales para la simulacion.

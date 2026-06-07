@@ -1,76 +1,32 @@
 import {
+  AbstractMesh,
   ArcRotateCamera,
   Color3,
   Color4,
   DirectionalLight,
-  DynamicTexture,
   HemisphericLight,
   MeshBuilder,
+  PointLight,
   Scene,
   StandardMaterial,
-  Texture,
   Vector3,
 } from '@babylonjs/core';
 import type {
   PrimitiveSceneDefinition,
   SceneDefinition,
+  UnitySceneExportColliderDefinition,
+  UnitySceneExportLightDefinition,
+  UnitySceneExportSceneData,
+  UnitySceneExportSceneDefinition,
+  UnitySceneExportTransitionTriggerDefinition,
 } from '../content/contentTypes';
 import type { GameRuntime } from '../bootstrap/gameRuntimeRegistry';
 import { buildPrimitiveAssembly } from './primitiveAssembly';
 
-type TiledMap = {
-  width: number;
-  height: number;
-  tilewidth: number;
-  tileheight: number;
-  orientation: string;
-  layers: TiledLayer[];
-  tilesets: TiledTileset[];
-};
-
-type TiledLayer = TiledTileLayer | TiledObjectLayer;
-
-type TiledTileLayer = {
-  type: 'tilelayer';
-  name: string;
-  data: number[];
-  width: number;
-  height: number;
-  visible?: boolean;
-  opacity?: number;
-};
-
-type TiledObjectLayer = {
-  type: 'objectgroup';
-  name: string;
-  objects: Array<{
-    x: number;
-    y: number;
-  }>;
-};
-
-type TiledTileset = {
-  firstgid: number;
-  columns: number;
-  image?: string;
-  imageheight: number;
-  imagewidth: number;
-  margin?: number;
-  name: string;
-  spacing?: number;
-  tilecount: number;
-  tileheight: number;
-  tilewidth: number;
-};
-
-type TiledTilesetWithImage = TiledTileset & {
-  imageElement: HTMLImageElement;
-};
-
 export type BuiltSceneContext = {
+  scene: Scene;
   sceneId: string;
   toWorldPosition(x: number, y: number): { x: number; y: number; z: number };
-  measureSprite(frameWidth: number, frameHeight: number): { width: number; height: number };
 };
 
 export class SceneBuilder {
@@ -86,53 +42,14 @@ export class SceneBuilder {
       return this.buildPrimitiveScene(scene, sceneDefinition);
     }
 
-    if (sceneDefinition.builder === 'tiled-map') {
-      return this.buildTiledScene(scene, sceneDefinition);
+    if (sceneDefinition.builder === 'unity-scene-export') {
+      return this.buildUnitySceneExport(scene, sceneDefinition);
     }
 
     throw new Error(`El builder de escena ${stringifyBuilder(sceneDefinition)} no esta soportado.`);
   }
 
-  private async buildTiledScene(scene: Scene, sceneDefinition: Extract<SceneDefinition, { builder: 'tiled-map' }>) {
-    const mapVisual = this.runtime.catalog.mapVisuals[sceneDefinition.mapVisualId];
-    if (!mapVisual) {
-      throw new Error(`No existe mapVisual ${sceneDefinition.mapVisualId} para la escena ${sceneDefinition.sceneId}.`);
-    }
-
-    const mapFile = this.runtime.catalog.resolveFile(mapVisual.mapFileId);
-    const mapDefinition = await this.fetchJson<TiledMap>(mapFile.url);
-
-    if (mapDefinition.orientation !== 'orthogonal') {
-      throw new Error('Solo se soportan mapas Tiled ortogonales en el runtime Babylon inicial.');
-    }
-
-    const tilesets = await Promise.all(
-      mapDefinition.tilesets.map(async (tileset) => ({
-        ...tileset,
-        imageElement: await loadImage(
-          this.resolveTilesetUrl(sceneDefinition.sceneId, tileset.name, tileset.image, mapFile.url),
-        ),
-      })),
-    );
-
-    this.createTiledCameraAndLighting(scene, mapDefinition);
-    this.createMapPlanes(scene, mapDefinition, tilesets);
-
-    return {
-      sceneId: sceneDefinition.sceneId,
-      toWorldPosition: (x: number, y: number) => ({
-        x: x / mapDefinition.tilewidth,
-        y: 0,
-        z: mapDefinition.height - y / mapDefinition.tileheight,
-      }),
-      measureSprite: (frameWidth: number, frameHeight: number) => ({
-        width: frameWidth / mapDefinition.tilewidth,
-        height: frameHeight / mapDefinition.tileheight,
-      }),
-    };
-  }
-
-  private buildPrimitiveScene(scene: Scene, sceneDefinition: PrimitiveSceneDefinition) {
+  private buildPrimitiveScene(scene: Scene, sceneDefinition: PrimitiveSceneDefinition): BuiltSceneContext {
     const coordinateScale = sceneDefinition.coordinateScale ?? 1;
     const worldWidth = sceneDefinition.worldWidth;
     const worldDepth = sceneDefinition.worldDepth;
@@ -143,8 +60,7 @@ export class SceneBuilder {
     scene.clearColor = new Color4(skyColor.r, skyColor.g, skyColor.b, 1);
 
     const center = new Vector3(worldWidth / 2, 0, worldDepth / 2);
-    const radius =
-      sceneDefinition.camera?.radius ?? Math.max(worldWidth, worldDepth) * 1.15;
+    const radius = sceneDefinition.camera?.radius ?? Math.max(worldWidth, worldDepth) * 1.15;
     const camera = new ArcRotateCamera(
       'world-camera',
       sceneDefinition.camera?.alpha ?? -Math.PI / 2,
@@ -158,13 +74,7 @@ export class SceneBuilder {
       scene,
     );
 
-    camera.attachControl(this.canvas, true);
-    camera.lowerRadiusLimit = radius * 0.55;
-    camera.upperRadiusLimit = radius * 1.45;
-    camera.lowerBetaLimit = 0.55;
-    camera.upperBetaLimit = 1.25;
-    camera.wheelPrecision = 24;
-    camera.panningSensibility = 0;
+    configureOrbitCamera(camera, this.canvas, radius);
 
     const sunLight = new DirectionalLight('sun-light', new Vector3(-0.35, -1, 0.2), scene);
     sunLight.intensity = 1.15;
@@ -175,21 +85,7 @@ export class SceneBuilder {
     skyLight.diffuse = ambientColor;
     skyLight.groundColor = groundColor.scale(0.55);
 
-    const groundMaterial = new StandardMaterial('scene-ground-material', scene);
-    groundMaterial.diffuseColor = groundColor;
-    groundMaterial.specularColor = Color3.Black();
-
-    const ground = MeshBuilder.CreateGround(
-      'scene-ground',
-      {
-        width: worldWidth,
-        height: worldDepth,
-        subdivisions: Math.max(worldWidth, worldDepth),
-      },
-      scene,
-    );
-    ground.position = new Vector3(worldWidth / 2, 0, worldDepth / 2);
-    ground.material = groundMaterial;
+    createGround(scene, worldWidth, worldDepth, groundColor, new Vector3(worldWidth / 2, 0, worldDepth / 2));
 
     for (const prop of sceneDefinition.props ?? []) {
       const assembly = buildPrimitiveAssembly(scene, prop.propId, prop.parts);
@@ -207,128 +103,196 @@ export class SceneBuilder {
     }
 
     return {
+      scene,
       sceneId: sceneDefinition.sceneId,
       toWorldPosition: (x: number, y: number) => ({
         x: x * coordinateScale,
         y: 0,
         z: worldDepth - y * coordinateScale,
       }),
-      measureSprite: (frameWidth: number, frameHeight: number) => ({
-        width: (frameWidth / 32) * coordinateScale,
-        height: (frameHeight / 32) * coordinateScale,
-      }),
     };
   }
 
-  private createTiledCameraAndLighting(scene: Scene, mapDefinition: TiledMap) {
-    const center = new Vector3(mapDefinition.width / 2, 0.35, mapDefinition.height / 2);
-    const radius = Math.max(mapDefinition.width, mapDefinition.height) * 0.95;
+  private async buildUnitySceneExport(
+    scene: Scene,
+    sceneDefinition: UnitySceneExportSceneDefinition,
+  ): Promise<BuiltSceneContext> {
+    const sceneDataFile = this.runtime.catalog.resolveFile(sceneDefinition.sceneDataFileId);
+    const sceneData = await this.fetchJson<UnitySceneExportSceneData>(sceneDataFile.url);
+    const boundsWidth = Math.max(sceneData.bounds?.width ?? 30, 1);
+    const boundsDepth = Math.max(sceneData.bounds?.depth ?? 30, 1);
+
+    scene.clearColor = new Color4(0.75, 0.84, 0.93, 1);
+
+    const radius = Math.max(boundsWidth, boundsDepth) * 1.15;
     const camera = new ArcRotateCamera(
       'world-camera',
       -Math.PI / 2,
       1.05,
       radius,
-      center,
+      new Vector3(0, 1.2, 0),
       scene,
     );
+    configureOrbitCamera(camera, this.canvas, radius);
 
-    camera.attachControl(this.canvas, true);
-    camera.lowerRadiusLimit = radius * 0.65;
-    camera.upperRadiusLimit = radius * 1.4;
-    camera.lowerBetaLimit = 0.65;
-    camera.upperBetaLimit = 1.25;
-    camera.panningSensibility = 0;
-    camera.wheelPrecision = 32;
+    if ((sceneData.lights?.length ?? 0) > 0) {
+      sceneData.lights?.forEach((light, index) => {
+        this.createExportedLight(scene, light, index);
+      });
+    } else {
+      const sunLight = new DirectionalLight('sun-light', new Vector3(-0.35, -1, 0.2), scene);
+      sunLight.intensity = 1.1;
 
-    const skyLight = new HemisphericLight('sky-light', new Vector3(0.25, 1, -0.35), scene);
-    skyLight.intensity = 1.05;
-    skyLight.diffuse = new Color3(0.95, 0.95, 0.9);
-    skyLight.groundColor = new Color3(0.25, 0.28, 0.22);
-  }
-
-  private createMapPlanes(scene: Scene, mapDefinition: TiledMap, tilesets: TiledTilesetWithImage[]) {
-    const { baseCanvas, overlayCanvas } = rasterizeMapLayers(mapDefinition, tilesets);
-    const mapWidth = mapDefinition.width;
-    const mapHeight = mapDefinition.height;
-
-    const baseTexture = new DynamicTexture(
-      'map-base-texture',
-      baseCanvas,
-      scene,
-      false,
-      Texture.NEAREST_SAMPLINGMODE,
-    );
-    baseTexture.hasAlpha = true;
-
-    const baseMaterial = new StandardMaterial('map-base-material', scene);
-    baseMaterial.diffuseTexture = baseTexture;
-    baseMaterial.opacityTexture = baseTexture;
-    baseMaterial.disableLighting = true;
-    baseMaterial.emissiveColor = Color3.White();
-
-    const ground = MeshBuilder.CreateGround(
-      'map-ground',
-      {
-        width: mapWidth,
-        height: mapHeight,
-      },
-      scene,
-    );
-    ground.position = new Vector3(mapWidth / 2, 0, mapHeight / 2);
-    ground.material = baseMaterial;
-
-    if (!isCanvasTransparent(overlayCanvas)) {
-      const overlayTexture = new DynamicTexture(
-        'map-overlay-texture',
-        overlayCanvas,
-        scene,
-        false,
-        Texture.NEAREST_SAMPLINGMODE,
-      );
-      overlayTexture.hasAlpha = true;
-
-      const overlayMaterial = new StandardMaterial('map-overlay-material', scene);
-      overlayMaterial.diffuseTexture = overlayTexture;
-      overlayMaterial.opacityTexture = overlayTexture;
-      overlayMaterial.disableLighting = true;
-      overlayMaterial.emissiveColor = Color3.White();
-
-      const overlay = MeshBuilder.CreateGround(
-        'map-overlay',
-        {
-          width: mapWidth,
-          height: mapHeight,
-        },
-        scene,
-      );
-      overlay.position = new Vector3(mapWidth / 2, 1.12, mapHeight / 2);
-      overlay.material = overlayMaterial;
+      const skyLight = new HemisphericLight('sky-light', new Vector3(0.2, 1, -0.1), scene);
+      skyLight.intensity = 0.6;
+      skyLight.groundColor = new Color3(0.28, 0.32, 0.24);
     }
+
+    createGround(scene, boundsWidth, boundsDepth, parseColor('#617c4d', '#617c4d'), Vector3.Zero());
+
+    sceneData.props?.forEach((prop) => {
+      createScenePlaceholderBox(
+        scene,
+        `prop-${prop.propId}`,
+        prop.position,
+        prop.rotation,
+        prop.scale,
+        hashColor(prop.visualAssetId ?? prop.propId),
+        0.95,
+      );
+    });
+
+    sceneData.colliders
+      ?.filter((collider) => collider.clientCollision !== 'none')
+      .forEach((collider) => {
+        this.createColliderPreview(scene, collider);
+      });
+
+    sceneData.transitions?.forEach((transition) => {
+      if (transition.trigger) {
+        this.createTransitionPreview(scene, transition.transitionId, transition.trigger);
+      }
+    });
+
+    return {
+      scene,
+      sceneId: sceneDefinition.sceneId,
+      toWorldPosition: (x: number, y: number) => ({
+        x,
+        y: 0,
+        z: y,
+      }),
+    };
   }
 
-  private resolveTilesetUrl(
-    sceneId: string,
-    tilesetName: string,
-    imagePath: string | undefined,
-    mapUrl: string,
+  private createExportedLight(scene: Scene, light: UnitySceneExportLightDefinition, index: number) {
+    const lightColor = parseColor(light.color, '#FFF5E0');
+    const intensity = light.intensity ?? 1;
+
+    if (light.lightType === 'directional') {
+      const rotation = light.rotation ?? {};
+      const direction = directionFromEuler(rotation.x ?? 50, rotation.y ?? 330);
+      const directionalLight = new DirectionalLight(`export-light-${index}`, direction, scene);
+      directionalLight.diffuse = lightColor;
+      directionalLight.intensity = intensity;
+      return;
+    }
+
+    if (light.lightType === 'point' || light.lightType === 'spot') {
+      const pointLight = new PointLight(
+        `export-light-${index}`,
+        toVector3(light.position),
+        scene,
+      );
+      pointLight.diffuse = lightColor;
+      pointLight.intensity = intensity;
+      pointLight.range = light.range ?? 18;
+      return;
+    }
+
+    const hemiLight = new HemisphericLight(
+      `export-light-${index}`,
+      new Vector3(0, 1, 0),
+      scene,
+    );
+    hemiLight.diffuse = lightColor;
+    hemiLight.intensity = intensity;
+  }
+
+  private createColliderPreview(scene: Scene, collider: UnitySceneExportColliderDefinition) {
+    const color =
+      collider.colliderKind === 'trigger'
+        ? parseColor('#e7c45d', '#e7c45d')
+        : parseColor('#6d88a8', '#6d88a8');
+
+    if (collider.shape.type === 'box') {
+      createScenePlaceholderBox(
+        scene,
+        `collider-${collider.colliderId}`,
+        collider.shape.center,
+        undefined,
+        collider.shape.size,
+        color,
+        0.25,
+      );
+      return;
+    }
+
+    const mesh =
+      collider.shape.type === 'sphere'
+        ? MeshBuilder.CreateSphere(`collider-${collider.colliderId}`, {
+            diameter: collider.shape.radius * 2,
+            segments: 16,
+          }, scene)
+        : collider.shape.type === 'capsule'
+          ? MeshBuilder.CreateCapsule(`collider-${collider.colliderId}`, {
+              height: collider.shape.height,
+              radius: collider.shape.radius,
+              tessellation: 10,
+            }, scene)
+          : MeshBuilder.CreateCylinder(`collider-${collider.colliderId}`, {
+              height: collider.shape.height,
+              diameter: collider.shape.radius * 2,
+              tessellation: 10,
+            }, scene);
+
+    mesh.position = toVector3(collider.shape.center);
+    applyDebugMaterial(mesh, color, 0.2, scene);
+  }
+
+  private createTransitionPreview(
+    scene: Scene,
+    transitionId: string,
+    trigger: UnitySceneExportTransitionTriggerDefinition,
   ) {
-    const sceneDefinition = this.runtime.catalog.resolveScene(sceneId);
-    if (sceneDefinition.builder !== 'tiled-map') {
-      throw new Error(`La escena ${sceneId} no usa tilesets Tiled.`);
+    if (trigger.type === 'box' && trigger.size) {
+      createScenePlaceholderBox(
+        scene,
+        `transition-${transitionId}`,
+        trigger.center,
+        undefined,
+        trigger.size,
+        parseColor('#7d5dd9', '#7d5dd9'),
+        0.15,
+      );
+      return;
     }
 
-    const mapVisual = this.runtime.catalog.mapVisuals[sceneDefinition.mapVisualId];
-    const contentTileset = mapVisual?.tilesets.find((entry) => entry.tilesetName === tilesetName);
+    const radius = trigger.radius ?? 0.75;
+    const mesh =
+      trigger.type === 'sphere'
+        ? MeshBuilder.CreateSphere(`transition-${transitionId}`, { diameter: radius * 2 }, scene)
+        : MeshBuilder.CreateCylinder(
+            `transition-${transitionId}`,
+            {
+              height: trigger.height ?? 2,
+              diameter: radius * 2,
+            },
+            scene,
+          );
 
-    if (contentTileset) {
-      return this.runtime.catalog.resolveFile(contentTileset.imageFileId).url;
-    }
-
-    if (!imagePath) {
-      throw new Error(`No se pudo resolver la imagen del tileset ${tilesetName}.`);
-    }
-
-    return resolveRelativeUrl(imagePath, mapUrl);
+    mesh.position = toVector3(trigger.center);
+    applyDebugMaterial(mesh, parseColor('#7d5dd9', '#7d5dd9'), 0.15, scene);
   }
 
   private fetchJson<TResponse>(url: string) {
@@ -342,124 +306,90 @@ export class SceneBuilder {
   }
 }
 
-function rasterizeMapLayers(map: TiledMap, tilesets: TiledTilesetWithImage[]) {
-  const baseCanvas = document.createElement('canvas');
-  baseCanvas.width = map.width * map.tilewidth;
-  baseCanvas.height = map.height * map.tileheight;
-
-  const overlayCanvas = document.createElement('canvas');
-  overlayCanvas.width = baseCanvas.width;
-  overlayCanvas.height = baseCanvas.height;
-
-  const baseContext = baseCanvas.getContext('2d');
-  const overlayContext = overlayCanvas.getContext('2d');
-
-  if (!baseContext || !overlayContext) {
-    throw new Error('No se pudo crear el contexto 2D para rasterizar el mapa.');
-  }
-
-  for (const layer of map.layers) {
-    if (layer.type !== 'tilelayer' || layer.visible === false) {
-      continue;
-    }
-
-    const targetContext = isOverlayLayer(layer.name) ? overlayContext : baseContext;
-    const layerOpacity = layer.opacity ?? 1;
-    targetContext.save();
-    targetContext.globalAlpha = layerOpacity;
-
-    for (let tileY = 0; tileY < layer.height; tileY += 1) {
-      for (let tileX = 0; tileX < layer.width; tileX += 1) {
-        const tileIndex = tileY * layer.width + tileX;
-        const rawGid = layer.data[tileIndex] ?? 0;
-        const gid = rawGid & ~0xe0000000;
-
-        if (gid === 0) {
-          continue;
-        }
-
-        const tileset = findTilesetForGid(tilesets, gid);
-        if (!tileset) {
-          continue;
-        }
-
-        const localTileId = gid - tileset.firstgid;
-        const sourceX =
-          (tileset.margin ?? 0) +
-          (localTileId % tileset.columns) * (tileset.tilewidth + (tileset.spacing ?? 0));
-        const sourceY =
-          (tileset.margin ?? 0) +
-          Math.floor(localTileId / tileset.columns) *
-            (tileset.tileheight + (tileset.spacing ?? 0));
-
-        targetContext.drawImage(
-          tileset.imageElement,
-          sourceX,
-          sourceY,
-          tileset.tilewidth,
-          tileset.tileheight,
-          tileX * map.tilewidth,
-          tileY * map.tileheight,
-          map.tilewidth,
-          map.tileheight,
-        );
-      }
-    }
-
-    targetContext.restore();
-  }
-
-  return {
-    baseCanvas,
-    overlayCanvas,
-  };
+function configureOrbitCamera(camera: ArcRotateCamera, canvas: HTMLCanvasElement, radius: number) {
+  camera.attachControl(canvas, true);
+  camera.lowerRadiusLimit = radius * 0.55;
+  camera.upperRadiusLimit = radius * 1.45;
+  camera.lowerBetaLimit = 0.55;
+  camera.upperBetaLimit = 1.25;
+  camera.wheelPrecision = 24;
+  camera.panningSensibility = 0;
 }
 
-function isOverlayLayer(layerName: string) {
-  return layerName.toLowerCase().includes('aboveplayer');
+function createGround(
+  scene: Scene,
+  width: number,
+  depth: number,
+  color: Color3,
+  center: Vector3,
+) {
+  const groundMaterial = new StandardMaterial('scene-ground-material', scene);
+  groundMaterial.diffuseColor = color;
+  groundMaterial.specularColor = Color3.Black();
+
+  const ground = MeshBuilder.CreateGround(
+    'scene-ground',
+    {
+      width,
+      height: depth,
+      subdivisions: Math.max(width, depth),
+    },
+    scene,
+  );
+  ground.position = center;
+  ground.material = groundMaterial;
 }
 
-function findTilesetForGid(tilesets: TiledTilesetWithImage[], gid: number) {
-  for (let index = tilesets.length - 1; index >= 0; index -= 1) {
-    const tileset = tilesets[index];
-
-    if (gid >= tileset.firstgid) {
-      return tileset;
-    }
-  }
-
-  return undefined;
+function createScenePlaceholderBox(
+  scene: Scene,
+  name: string,
+  position: Partial<{ x: number; y: number; z: number }>,
+  rotation: Partial<{ x: number; y: number; z: number }> | undefined,
+  scale: Partial<{ x: number; y: number; z: number }> | undefined,
+  color: Color3,
+  alpha: number,
+) {
+  const mesh = MeshBuilder.CreateBox(
+    name,
+    {
+      width: scale?.x ?? 1,
+      height: scale?.y ?? 1,
+      depth: scale?.z ?? 1,
+    },
+    scene,
+  );
+  mesh.position = toVector3(position);
+  mesh.rotation = new Vector3(
+    degreesToRadians(rotation?.x ?? 0),
+    degreesToRadians(rotation?.y ?? 0),
+    degreesToRadians(rotation?.z ?? 0),
+  );
+  applyDebugMaterial(mesh, color, alpha, scene);
 }
 
-function isCanvasTransparent(canvas: HTMLCanvasElement) {
-  const context = canvas.getContext('2d');
-
-  if (!context) {
-    return true;
-  }
-
-  const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
-
-  for (let index = 3; index < pixels.length; index += 4) {
-    if (pixels[index] !== 0) {
-      return false;
-    }
-  }
-
-  return true;
+function applyDebugMaterial(mesh: AbstractMesh, color: Color3, alpha: number, scene: Scene) {
+  const material = new StandardMaterial(`${mesh.name}-material`, scene);
+  material.diffuseColor = color;
+  material.emissiveColor = color.scale(0.2);
+  material.alpha = alpha;
+  mesh.material = material;
 }
 
-function resolveRelativeUrl(path: string, baseUrl: string) {
-  return new URL(path, new URL(baseUrl, window.location.href)).toString();
+function toVector3(definition?: Partial<{ x: number; y: number; z: number }>) {
+  return new Vector3(definition?.x ?? 0, definition?.y ?? 0, definition?.z ?? 0);
 }
 
-function loadImage(url: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error(`No se pudo cargar la imagen ${url}.`));
-    image.src = url;
-  });
+function directionFromEuler(pitchDegrees: number, yawDegrees: number) {
+  const pitch = degreesToRadians(pitchDegrees);
+  const yaw = degreesToRadians(yawDegrees);
+  const x = Math.cos(pitch) * Math.sin(yaw);
+  const y = -Math.sin(pitch);
+  const z = Math.cos(pitch) * Math.cos(yaw);
+  return new Vector3(x, y, z).normalize();
+}
+
+function degreesToRadians(value: number) {
+  return (value * Math.PI) / 180;
 }
 
 function parseColor(color: string | undefined, fallback: string) {
@@ -474,8 +404,16 @@ function normalizeHex(value: string) {
   return value;
 }
 
-function degreesToRadians(value: number) {
-  return (value * Math.PI) / 180;
+function hashColor(seed: string) {
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+
+  const r = 90 + (hash & 0x5f);
+  const g = 90 + ((hash >> 8) & 0x5f);
+  const b = 90 + ((hash >> 16) & 0x5f);
+  return Color3.FromInts(r, g, b);
 }
 
 function stringifyBuilder(sceneDefinition: SceneDefinition) {

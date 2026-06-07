@@ -5,57 +5,41 @@ IslaTortuga/
 |- apps/
 |  |- client/
 |  |  `- src/
-|  |     |- features/
-|  |     |  |- auth/                # Sesion local, login y usuario actual
-|  |     |  `- game-session/        # Entrada al juego y bootstrap de partida
+|  |     |- features/              # Auth, portal y sesion de juego
 |  |     |- game/
-|  |     |  |- bootstrap/           # start-game, runtime y arranque del juego
-|  |     |  |- content/             # manifest, cache, catalogo y descarga
-|  |     |  `- runtime/             # Babylon, escena del mundo y cliente websocket
-|  |     `- shared/
-|  |        `- http/                # Cliente HTTP comun del frontend
+|  |     |  |- bootstrap/          # Arranque del runtime cliente
+|  |     |  |- content/            # Manifest, cache y catalogo
+|  |     |  `- runtime/            # Babylon, escenas 3D y red
+|  |     `- shared/                # HTTP comun y utilidades
 |  `- server/
-|     `- src/
-|        |- auth/                   # JWT, login, registro y guard
-|        |- game-session/           # start-game y emision de game tickets
-|        |- health/                 # healthcheck
-|        `- prisma/                 # acceso a base de datos
-|- src/
-|  |- IslaTortuga.Server/
-|  |  |- Api/                       # HTTP del game server
-|  |  |- Content/                   # indice de content packs y resolucion
-|  |  |- GameLoop/                  # tick autoritativo
-|  |  |- Networking/                # websocket puro y protocolo
-|  |  |- Replication/               # snapshots e interest management
-|  |  |- Rooms/                     # rooms y jugadores de sala
-|  |  |- Sessions/                  # game tickets y player sessions
-|  |  `- World/                     # entidades, mundo y carga desde Tiled
-|  `- IslaTortuga.Protocol/
-|     |- examples/                  # ejemplos de mensajes JSON
-|     |- schemas/                   # json schema del protocolo
-|     `- protocol.md                # contrato de red
-|- assets/                          # assets fuente editables
-|  |- maps/
-|  |- sprites/
-|  |- tilesets/
-|  |- audio/
-|  `- raw/
-|- content-packs/                   # assets runtime versionados y descargables
+|     `- src/                      # API Nest y prejuego
+|- content-packs/
 |  |- index.json
 |  `- v001/
 |     |- manifest.json
-|     |- maps/
-|     |- tilesets/
-|     |- sprites/
-|     `- definitions/
-|- docs/                            # documentacion tecnica y mapas del repo
-|- infra/                           # despliegue e infraestructura
-`- packages/                        # reservado para librerias compartidas
+|     |- scenes/                   # Escenas exportadas desde Unity
+|     |- models/
+|     |- textures/
+|     |- materials/
+|     |- audio/
+|     |- animations/
+|     `- definitions/              # scene-definitions, entity visuals, reglas
+|- docs/
+|- src/
+|  |- IslaTortuga.Protocol/        # Contrato de red y schemas
+|  |- IslaTortuga.Server/          # Servidor C# standalone heredado
+|  `- IslaTortuga.Server.Core/     # Nucleo C# reutilizable
+`- Unity/
+   `- IslaTortugaServer/
+      `- Assets/Scripts/
+         |- Bootstrap/             # Arranque del host autoritativo
+         |- Networking/            # Gateway HTTP/WebSocket embebido
+         `- ServerCore/            # Mundo, sesiones y replicacion
 ```
 
 ## Regla base
 
-- `assets/` es la fuente editable.
-- `content-packs/` es lo que consume el cliente en runtime.
-- `apps/server` no simula juego.
-- `src/IslaTortuga.Server` es la verdad del mundo.
+- `content-packs/` es el runtime que consume Babylon.
+- Unity es la fuente de verdad para escenas 3D y simulacion.
+- `apps/server` no simula gameplay.
+- El cliente Babylon es 3D y consume escenas y visuales exportados desde Unity.

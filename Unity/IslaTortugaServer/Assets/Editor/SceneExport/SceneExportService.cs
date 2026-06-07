@@ -1,5 +1,4 @@
 using System;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -368,6 +367,7 @@ namespace IslaTortuga.Unity.SceneExport.Editor
                 ? root.GetComponentsInChildren<SceneAudioEmitterAuthoring>(true)
                     .Where(authoring => authoring.Export)
                     .Select(authoring => BuildAudioEmitterDocument(rootTransform, authoring))
+                    .Cast<object>()
                     .ToList()
                 : new List<object>();
 
@@ -375,6 +375,7 @@ namespace IslaTortuga.Unity.SceneExport.Editor
                 ? root.GetComponentsInChildren<SceneLightAuthoring>(true)
                     .Where(authoring => authoring.Export)
                     .Select(authoring => BuildLightDocument(rootTransform, authoring))
+                    .Cast<object>()
                     .ToList()
                 : new List<object>();
 
