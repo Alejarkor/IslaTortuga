@@ -1,9 +1,0 @@
-{
-  "scenes": {
-    "scene.test.plain": {
-      "sceneId": "scene.test.plain",
-      "builder": "unity-scene-export",
-      "sceneDataFileId": "scene.scene.test.plain"
-    }
-  }
-}

@@ -1,8 +1,0 @@
-{
-  "op": "auth.join",
-  "requestId": "join-001",
-  "sentAt": 1747777200000,
-  "payload": {
-    "gameTicket": "4f04d8d6c5a4450e9b5da48d0f5b5d86"
-  }
-}

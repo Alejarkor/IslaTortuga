@@ -1,0 +1,2 @@
+Para lanzar la seed:
+Powershell desde Server/Game_Database -> Get-Content .\seeds\001_dev_data.sql | docker compose exec -T postgres psql -U admin -d islaT_DB

@@ -1,81 +1,150 @@
-# Dependencies
-node_modules/
-.pnpm-store/
+# ============================================================
+# SISTEMA OPERATIVO
+# ============================================================
 
-# Builds
-dist/
-build/
-.next/
-out/
-coverage/
-bin/
-obj/
-.vite/
-.turbo/
-
-# Env files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-
-# OS / Editor
 .DS_Store
 Thumbs.db
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
+desktop.ini
+
+
+# ============================================================
+# EDITORES / IDEs
+# ============================================================
+
+.vscode/
 .idea/
-.vs/
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
 *.rsuser
-_ReSharper*/
-*.[Rr]e[Ss]harper
-*.DotSettings.user
-*.ncrunch*
-*.localhistory/
 
-# TypeScript
-*.tsbuildinfo
+# Mantener settings compartidos si algún día los quieres versionar:
+# !.vscode/settings.json
+# !.vscode/extensions.json
 
-# Prisma
-apps/server/prisma/dev.db
-apps/server/prisma/dev.db-journal
 
-# Docker / local data
-postgres_data/
-data/
+# ============================================================
+# VARIABLES DE ENTORNO / SECRETOS
+# ============================================================
 
-# Phaser / assets temp
-*.aseprite~
-*.tmp
+.env
+.env.*
+!.env.example
 
-# Babylon / frontend caches
-apps/client/.vite/
-apps/client/dist/
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
 
-# Unity
+
+# ============================================================
+# LOGS
+# ============================================================
+
+*.log
+logs/
+Logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# ============================================================
+# DOCKER / BASE DE DATOS
+# ============================================================
+
+# Backups reales de base de datos
+**/Backups/*.sql
+**/Backups/*.dump
+**/Backups/*.backup
+**/backups/*.sql
+**/backups/*.dump
+**/backups/*.backup
+
+# Permitir mantener la carpeta vacía en repo
+!**/Backups/.gitkeep
+!**/backups/.gitkeep
+
+# Volúmenes locales si alguna vez los montas como carpetas
+**/postgres_data/
+**/pgdata/
+**/data/postgres/
+**/docker-data/
+
+# NO ignorar estructura de base de datos
+!**/migrations/
+!**/migrations/*.sql
+!**/seeds/
+!**/seeds/*.sql
+!**/init/
+!**/init/*.sql
+
+
+# ============================================================
+# NODE / API TYPESCRIPT / JAVASCRIPT
+# ============================================================
+
+node_modules/
+dist/
+build/
+coverage/
+.nyc_output/
+
+package-lock.json
+# Descomenta esto si prefieres versionar package-lock:
+# !package-lock.json
+
+.pnpm-store/
+.yarn/
+.yarn-cache/
+
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.turbo/
+
+
+# ============================================================
+# .NET / C# API / SERVICIOS
+# ============================================================
+
+bin/
+obj/
+[Bb]uild/
+[Bb]uilds/
+TestResults/
+.vs/
+
+*.nupkg
+*.snupkg
+
+
+# ============================================================
+# UNITY
+# ============================================================
+
+# Carpetas generadas por Unity
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
 [Ll]ogs/
-[Mm]emoryCaptures/
-[Rr]ecordings/
 [Uu]ser[Ss]ettings/
-Assets/AssetStoreTools*
+
+# Cachés
+[Mm]emoryCaptures/
+Recordings/
+[Aa]ssets/AssetStoreTools*
+
+# Archivos generados
+*.csproj
+*.sln
+*.sln.DotSettings.user
 *.pidb
 *.booproj
 *.svd
@@ -83,10 +152,84 @@ Assets/AssetStoreTools*
 *.mdb
 *.opendb
 *.VC.db
-*.unityproj
-*.sln.iml
 
-# Misc
-.cache/
-.temp/
-tmp/
+# Unity crash/debug
+sysinfo.txt
+crashlytics-build.properties
+
+# Unity Addressables / bundles generados
+[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+[Aa]ssets/[Ss]treamingAssets/aa/
+ServerData/
+AssetBundles/
+assetbundles/
+
+# Unity profiler
+*.data
+*.raw
+
+
+# ============================================================
+# UNITY: IMPORTANTE
+# ============================================================
+
+# NO ignorar estos, deben subirse
+![Aa]ssets/
+![Pp]ackages/
+![Pp]roject[Ss]ettings/
+!ProjectSettings/
+!Packages/
+!Assets/
+
+# NO ignorar archivos .meta
+!*.meta
+
+
+# ============================================================
+# PYTHON, POR SI USAS SCRIPTS
+# ============================================================
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+ENV/
+.ipynb_checkpoints/
+
+
+# ============================================================
+# ARCHIVOS TEMPORALES
+# ============================================================
+
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.old
+
+
+# ============================================================
+# COMPRESIONES / EXPORTS PESADOS
+# ============================================================
+
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+
+# Docker images exportadas, normalmente no versionar
+*.tar
+
+
+# ============================================================
+# DOCUMENTOS TEMPORALES OFFICE
+# ============================================================
+
+~$*.docx
+~$*.xlsx
+~$*.pptx
