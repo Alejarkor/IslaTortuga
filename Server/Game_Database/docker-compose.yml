@@ -22,5 +22,35 @@ services:
     depends_on:
       - postgres
 
+
+  game-api:
+    build: ../GameApi
+    container_name: islaT_game_api
+    restart: unless-stopped
+    environment:
+      PORT: ${GAME_API_PORT}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    expose:
+      - "${GAME_API_PORT}"
+    depends_on:
+      - postgres
+
+  web-server:
+    build: ../WebServer
+    container_name: islaT_web_server
+    restart: unless-stopped
+    environment:
+      PORT: ${WEB_SERVER_PORT}
+      GAME_API_URL: http://game-api:${GAME_API_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "${WEB_SERVER_PORT}:${WEB_SERVER_PORT}"
+    depends_on:
+      - game-api
+
 volumes:
   postgres_data:
