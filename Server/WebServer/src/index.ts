@@ -1,11 +1,23 @@
 import express, { Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
+import path from "path";
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
+
+const assetsDir = process.env.ASSETS_DIR ?? "/app/server_assets";
+
+app.use(
+  "/assets/files",
+  express.static(assetsDir, {
+    index: false,
+    dotfiles: "deny",
+    fallthrough: false
+  })
+);
 
 const port = Number(process.env.PORT ?? 3000);
 const gameApiUrl = process.env.GAME_API_URL ?? "http://localhost:3001";
@@ -201,6 +213,148 @@ app.patch(
     return res.status(apiResponse.status).json(apiResponse.data);
   }
 );
+
+app.get("/api/friends", authMiddleware, async (req: AuthenticatedRequest, res) => {
+  const playerId = req.session!.playerId;
+
+  const apiResponse = await forwardJson(
+    `${gameApiUrl}/internal/friends/${playerId}`
+  );
+
+  return res.status(apiResponse.status).json(apiResponse.data);
+});
+
+app.get(
+  "/api/friends/requests/incoming",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const playerId = req.session!.playerId;
+
+    const apiResponse = await forwardJson(
+      `${gameApiUrl}/internal/friend-requests/${playerId}/incoming`
+    );
+
+    return res.status(apiResponse.status).json(apiResponse.data);
+  }
+);
+
+app.get(
+  "/api/friends/requests/outgoing",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const playerId = req.session!.playerId;
+
+    const apiResponse = await forwardJson(
+      `${gameApiUrl}/internal/friend-requests/${playerId}/outgoing`
+    );
+
+    return res.status(apiResponse.status).json(apiResponse.data);
+  }
+);
+
+app.post(
+  "/api/friends/requests",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const fromPlayerId = req.session!.playerId;
+
+    const apiResponse = await forwardJson(
+      `${gameApiUrl}/internal/friend-requests`,
+      {
+        method: "POST",
+        body: {
+          fromPlayerId,
+          toPlayerId: req.body?.toPlayerId,
+          nickname: req.body?.nickname
+        }
+      }
+    );
+
+    return res.status(apiResponse.status).json(apiResponse.data);
+  }
+);
+
+app.post(
+  "/api/friends/requests/:requestId/accept",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const playerId = req.session!.playerId;
+
+    const apiResponse = await forwardJson(
+      `${gameApiUrl}/internal/friend-requests/${req.params.requestId}/accept`,
+      {
+        method: "POST",
+        body: {
+          playerId
+        }
+      }
+    );
+
+    return res.status(apiResponse.status).json(apiResponse.data);
+  }
+);
+
+app.post(
+  "/api/friends/requests/:requestId/reject",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const playerId = req.session!.playerId;
+
+    const apiResponse = await forwardJson(
+      `${gameApiUrl}/internal/friend-requests/${req.params.requestId}/reject`,
+      {
+        method: "POST",
+        body: {
+          playerId
+        }
+      }
+    );
+
+    return res.status(apiResponse.status).json(apiResponse.data);
+  }
+);
+
+app.post(
+  "/api/friends/requests/:requestId/cancel",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const playerId = req.session!.playerId;
+
+    const apiResponse = await forwardJson(
+      `${gameApiUrl}/internal/friend-requests/${req.params.requestId}/cancel`,
+      {
+        method: "POST",
+        body: {
+          playerId
+        }
+      }
+    );
+
+    return res.status(apiResponse.status).json(apiResponse.data);
+  }
+);
+
+//------------------------------------ ENDPOINT DE ASSETS ------------------------------------
+
+app.get("/assets/manifest", async (req, res) => {
+  const targetType = req.query.targetType;
+  const targetId = req.query.targetId;
+
+  if (!targetType || !targetId) {
+    return res.status(400).json({
+      ok: false,
+      error: "targetType and targetId are required"
+    });
+  }
+
+  const apiResponse = await forwardJson(
+    `${gameApiUrl}/internal/assets/manifest?targetType=${encodeURIComponent(
+      String(targetType)
+    )}&targetId=${encodeURIComponent(String(targetId))}`
+  );
+
+  return res.status(apiResponse.status).json(apiResponse.data);
+});
 
 app.listen(port, () => {
   console.log(`WebServer listening on port ${port}`);

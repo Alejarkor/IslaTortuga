@@ -1,0 +1,4 @@
+Get-Content -Raw .\migrations\000_current_schema.sql | docker compose exec -T postgres psql -U admin -d islaT_DB
+
+
+esto es para reconstruir el schema

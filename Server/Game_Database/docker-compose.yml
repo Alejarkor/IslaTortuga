@@ -34,8 +34,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    expose:
-      - "${GAME_API_PORT}"
+      ASSET_ADMIN_TOKEN: ${ASSET_ADMIN_TOKEN}
+    ports:
+      - "${GAME_API_PORT}:${GAME_API_PORT}"
     depends_on:
       - postgres
 
@@ -47,10 +48,13 @@ services:
       PORT: ${WEB_SERVER_PORT}
       GAME_API_URL: http://game-api:${GAME_API_PORT}
       JWT_SECRET: ${JWT_SECRET}
+      ASSETS_DIR: /app/server_assets
     ports:
-      - "${WEB_SERVER_PORT}:${WEB_SERVER_PORT}"
+        - "${WEB_SERVER_PORT}:${WEB_SERVER_PORT}"
     depends_on:
       - game-api
+    volumes:
+      - ../GameAssets/server_assets:/app/server_assets:ro  
 
 volumes:
   postgres_data:

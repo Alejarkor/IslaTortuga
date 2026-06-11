@@ -1,3 +1,5 @@
 -para exportar un schema (cmd en donde el archivo yml de la base de datos):	New-Item -ItemType Directory -Force migrations
 										docker compose exec -T postgres pg_dump -U admin -d islaT_DB --schema-only --no-owner --no-privileges > migrations/000_current_schema.sql
 
+-Para levantar los conentendores: 						docker compose up -d --build
+-Para reconstruir el schema:							En migrations -> Get-Content -Raw .\migrations\000_current_schema.sql | docker compose exec -T postgres psql -U admin -d islaT_DB
