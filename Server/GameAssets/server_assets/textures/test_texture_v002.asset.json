@@ -1,0 +1,32 @@
+{
+  "assetKey": "textures/test_texture",
+  "assetType": "texture",
+  "version": "2",
+  "status": "published",
+  "manifests": [
+    {
+      "manifestId": "manifest_player_editor_v001",
+      "manifestName": "Player editor assets",
+      "manifestVersion": "1",
+      "targetType": "global",
+      "targetId": "player_editor",
+      "manifestStatus": "published",
+      "isCurrent": true,
+      "usage": null,
+      "required": true,
+      "loadPriority": 100
+    },
+    {
+      "manifestId": "manifest_test_v001",
+      "manifestName": "test_asset",
+      "manifestVersion": "1",
+      "targetType": "global",
+      "targetId": "test_asset_prueba",
+      "manifestStatus": "draft",
+      "isCurrent": false,
+      "usage": null,
+      "required": true,
+      "loadPriority": 100
+    }
+  ]
+}
