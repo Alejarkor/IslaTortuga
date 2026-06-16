@@ -1,0 +1,62 @@
+{
+  "PanelFrame": {
+    "top": 25,
+    "right": 21,
+    "bottom": 19,
+    "left": 24
+  },
+  "HeaderFrame": {
+    "top": 14,
+    "right": 12,
+    "bottom": 19,
+    "left": 11
+  },
+  "ColorPanel": {
+    "top": 9,
+    "right": 8,
+    "bottom": 7,
+    "left": 8
+  },
+  "AvatarFrame": {
+    "top": 17,
+    "right": 18,
+    "bottom": 18,
+    "left": 18
+  },
+  "InputField": {
+    "top": 14,
+    "right": 16,
+    "bottom": 16,
+    "left": 16
+  },
+  "MiniPanel": {
+    "top": 20,
+    "right": 22,
+    "bottom": 22,
+    "left": 22
+  },
+  "ButtonTeal_normal": {
+    "top": 14,
+    "right": 20,
+    "bottom": 16,
+    "left": 20
+  },
+  "TabActive": {
+    "top": 20,
+    "right": 24,
+    "bottom": 8,
+    "left": 24
+  },
+  "TabInactive": {
+    "top": 20,
+    "right": 24,
+    "bottom": 8,
+    "left": 24
+  },
+  "ButtonSmall": {
+    "top": 12,
+    "right": 16,
+    "bottom": 14,
+    "left": 16
+  }
+}

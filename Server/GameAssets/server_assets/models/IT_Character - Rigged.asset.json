@@ -1,0 +1,20 @@
+{
+  "assetKey": "models/IT_Character - Rigged",
+  "assetType": "model",
+  "version": "1",
+  "status": "published",
+  "manifests": [
+    {
+      "manifestId": "manifest_player_editor_pregame_v001",
+      "manifestName": "playerEditorPregame",
+      "manifestVersion": "1",
+      "targetType": "global",
+      "targetId": "playerEditorPregame",
+      "manifestStatus": "published",
+      "isCurrent": true,
+      "usage": null,
+      "required": true,
+      "loadPriority": 100
+    }
+  ]
+}

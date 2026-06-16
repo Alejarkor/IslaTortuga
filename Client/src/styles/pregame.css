@@ -1,0 +1,1367 @@
+/* ============================================================
+   Lobby / pre-juego — estética pirata (placeholder sin assets).
+   Estructura según la referencia: cabecera + 3 columnas
+   (Amigos y Chat · Personaje · Salas).
+   ============================================================ */
+
+.lobby {
+  --wood-d: #241a12;
+  --wood: #33261a;
+  --wood-l: #4a3a28;
+  --parch-1: #e7d3aa;
+  --parch-2: #d8bf90;
+  --parch-3: #c4a877;
+  --ink: #3b2c18;
+  --ink-soft: #6a543a;
+  --gold-1: #e7c879;
+  --gold-2: #b8893f;
+  --gold-3: #7d5a26;
+  --teal-1: #3fa39a;
+  --teal-2: #1f6f6b;
+  --teal-3: #134a47;
+  --panel-radius: 14px;
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  font-family: "Cinzel", serif;
+  color: var(--ink);
+  background-color: #0c1a26;
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(90, 140, 170, 0.22), transparent 55%),
+    linear-gradient(180deg, #142b3c 0%, #0c1a26 50%, #060f17 100%);
+  background-attachment: fixed;
+}
+
+/* ---------- Marco genérico de panel de madera + pergamino ---------- */
+.wood-frame {
+  border-radius: var(--panel-radius);
+  border: 2px solid var(--gold-3);
+  background: linear-gradient(180deg, var(--wood) 0%, var(--wood-d) 100%);
+  box-shadow:
+    0 0 0 3px rgba(0, 0, 0, 0.35),
+    0 10px 26px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(231, 200, 121, 0.25);
+  padding: 6px;
+}
+.parch {
+  border-radius: 9px;
+  background:
+    radial-gradient(60% 40% at 20% 10%, rgba(120, 92, 52, 0.12), transparent 60%),
+    linear-gradient(170deg, var(--parch-1), var(--parch-2) 60%, var(--parch-3));
+  box-shadow: inset 0 0 24px rgba(95, 70, 35, 0.28);
+}
+
+/* ---------- Cabecera ---------- */
+.lobby-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+}
+.lobby-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.lobby-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1c130a;
+  background: linear-gradient(180deg, var(--gold-1), var(--gold-2));
+  border: 2px solid var(--gold-3);
+}
+.lobby-id__name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gold-1);
+}
+.lobby-id__level {
+  margin: 2px 0 5px;
+  font-size: 12px;
+  color: #b9c6cf;
+}
+.xp-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.xp-bar__track {
+  width: 160px;
+  height: 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--gold-3);
+  overflow: hidden;
+}
+.xp-bar__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-2), var(--gold-1));
+}
+.xp-bar__text {
+  font-size: 11px;
+  color: #9fb0bb;
+}
+.lobby-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--teal-1);
+}
+.lobby-logo__emblem { width: 30px; height: 30px; color: var(--gold-1); }
+.lobby-logo__title {
+  margin: 0;
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 1px;
+  color: var(--teal-1);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+.lobby-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.currency {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--gold-3);
+  font-size: 14px;
+  font-weight: 700;
+  color: #f0e2c2;
+}
+.currency__coin { width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(180deg,#f2cf6b,#bb8a32); }
+.currency__gem { width: 14px; height: 14px; background: linear-gradient(180deg,#7fdcff,#2b8fd6); transform: rotate(45deg); }
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  border: 1px solid var(--gold-3);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--gold-1);
+  cursor: pointer;
+}
+.icon-btn:hover { background: rgba(0,0,0,0.5); color: #fff; }
+.icon-btn svg { width: 18px; height: 18px; }
+
+/* ---------- Rejilla principal ---------- */
+.lobby-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr) 360px;
+  gap: 14px;
+  align-items: start;
+}
+/* ---------- Móvil: una sección por pantalla + swipe lateral ---------- */
+.lobby-dots { display: none; }
+
+@media (max-width: 1180px) {
+  .lobby {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    padding: 8px;
+    gap: 8px;
+  }
+  /* Cabecera compacta */
+  .lobby-header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+  .lobby-id { flex-wrap: wrap; justify-content: center; }
+  .lobby-actions { flex-wrap: wrap; justify-content: center; }
+
+  /* Carrusel horizontal de secciones */
+  .lobby-grid {
+    flex: 1;
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 0;
+    scrollbar-width: none;
+    min-height: 0;
+  }
+  .lobby-grid::-webkit-scrollbar { display: none; }
+  .lobby-grid > .lobby-panel {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    scroll-snap-align: start;
+    min-width: 0;
+  }
+  .lobby-panel__inner {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Indicadores de sección */
+  .lobby-dots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 4px 0 2px;
+  }
+  .lobby-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 2px solid var(--gold-2);
+    background: rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    padding: 0;
+  }
+  .lobby-dot--active { background: var(--gold-1); border-color: var(--gold-1); }
+}
+.lobby-panel { display: flex; flex-direction: column; }
+.lobby-panel__inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 14px;
+  gap: 12px;
+}
+.lobby-panel__title {
+  margin: 0;
+  text-align: center;
+  font-family: "Cinzel Decorative", serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: var(--gold-1);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.5);
+  padding-bottom: 6px;
+}
+
+/* ---------- Tabs ---------- */
+.seg-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--gold-3);
+}
+.seg-tab {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.seg-tab--active {
+  background: linear-gradient(180deg, var(--parch-1), var(--parch-3));
+  color: var(--ink);
+}
+.seg-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--teal-2);
+  color: #eafffb;
+  font-size: 11px;
+  display: inline-grid;
+  place-items: center;
+}
+
+/* ---------- Amigos ---------- */
+.friends { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.friends-group__title {
+  margin: 4px 2px;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
+.friend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 8px;
+}
+.friend-row:hover { background: rgba(120, 92, 52, 0.16); }
+.friend-av {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center; flex: none;
+  background: linear-gradient(180deg, var(--gold-1), var(--gold-2));
+  color: #1c130a; font-weight: 700; font-size: 13px;
+  position: relative;
+}
+.friend-av__dot {
+  position: absolute; right: -1px; bottom: -1px;
+  width: 11px; height: 11px; border-radius: 50%;
+  border: 2px solid var(--parch-2);
+}
+.friend-av__dot--on { background: #4caf50; }
+.friend-av__dot--off { background: #8a8a8a; }
+.friend-info { flex: 1; min-width: 0; }
+.friend-info__name { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); }
+.friend-info__status { margin: 0; font-size: 12px; color: var(--ink-soft); }
+.mini-btn {
+  border: 1px solid var(--gold-3);
+  border-radius: 7px;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, var(--teal-1), var(--teal-2));
+  color: #f3fbf9;
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mini-btn:hover { filter: brightness(1.08); }
+
+/* ---------- Chat ---------- */
+.chat { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+.chat-log {
+  display: flex; flex-direction: column; gap: 7px;
+  max-height: 190px; overflow-y: auto;
+  padding: 8px; border-radius: 8px;
+  background: rgba(0,0,0,0.18);
+}
+.chat-msg { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
+.chat-msg__who { font-weight: 700; color: var(--teal-3); }
+.chat-msg__time { font-size: 10px; color: var(--ink-soft); margin-left: auto; }
+.chat-input {
+  display: flex; gap: 8px; align-items: center;
+  padding: 6px 8px; border-radius: 9px;
+  background: rgba(0,0,0,0.28); border: 1px solid var(--gold-3);
+}
+.chat-input input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  color: #f2e4c6; font-family: "Cinzel", serif; font-size: 13px;
+}
+.chat-input input::placeholder { color: #9b876a; }
+
+/* ---------- Personaje ---------- */
+.char-col .lobby-panel__inner { gap: 14px; }
+.character-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 460px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid var(--gold-3);
+  background: radial-gradient(circle at 50% 30%, #1d3344, #0a141d);
+}
+.character-preview__canvas { width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+.character-preview__warning {
+  position: absolute; left: 10px; right: 10px; bottom: 10px; margin: 0;
+  padding: 8px 10px; font-size: 12px; border-radius: 8px;
+  background: rgba(224,168,58,0.18); border: 1px solid var(--gold-2); color: #f3d08a;
+}
+.preview-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 2px solid var(--gold-2);
+  background: rgba(20, 30, 40, 0.6);
+  color: var(--gold-1); font-size: 26px; line-height: 1; cursor: pointer;
+  display: grid; place-items: center;
+}
+.preview-arrow:hover { background: rgba(20,30,40,0.85); color: #fff; }
+.preview-arrow--left { left: 10px; }
+.preview-arrow--right { right: 10px; }
+
+/* ---------- Columnas de color ---------- */
+.color-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 10px;
+}
+.color-col { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.color-col__label { font-size: 12px; font-weight: 700; color: var(--ink); }
+.color-col__current {
+  width: 30px; height: 30px; border-radius: 7px; cursor: pointer; padding: 0;
+  border: 2px solid rgba(0,0,0,0.3); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+  position: relative; overflow: hidden;
+}
+.color-col__current input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.swatch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.swatch {
+  width: 18px; height: 18px; border-radius: 5px; cursor: pointer; padding: 0;
+  border: 2px solid transparent;
+}
+.swatch--active { border-color: var(--ink); }
+
+.section-label {
+  margin: 4px 0 0;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+  color: var(--ink); text-transform: uppercase;
+}
+
+/* ---------- Peinado ---------- */
+.hair-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  gap: 8px;
+}
+.hair-option {
+  background: rgba(0,0,0,0.18);
+  border: 2px solid var(--gold-3);
+  border-radius: 8px; padding: 6px 4px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--ink);
+}
+.hair-option--selected { border-color: var(--gold-1); box-shadow: 0 0 0 2px rgba(231,200,121,0.4); }
+.hair-option__thumb {
+  width: 42px; height: 42px; border-radius: 7px; overflow: hidden;
+  display: grid; place-items: center; background: rgba(255,255,255,0.18);
+}
+.hair-option__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.hair-option__placeholder { font-size: 18px; color: var(--ink-soft); }
+.hair-option__label { font-size: 10px; }
+
+.hair-color-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.hair-color-row .swatch { width: 24px; height: 24px; }
+
+/* ---------- Guardar ---------- */
+.save-bar {
+  margin-top: auto;
+  display: flex; flex-direction: column; gap: 10px; align-items: stretch;
+}
+.big-btn {
+  width: 100%; height: 50px; border-radius: 10px; cursor: pointer;
+  border: 2px solid var(--gold-1);
+  background: linear-gradient(180deg, var(--teal-1), var(--teal-2) 55%, var(--teal-3));
+  color: #f6efdd; font-family: "Cinzel", serif; font-weight: 700; font-size: 17px;
+  letter-spacing: 0.5px; text-shadow: 0 2px 2px rgba(0,0,0,0.4);
+  box-shadow: 0 0 0 3px var(--gold-3), 0 6px 14px rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.big-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.big-btn:not(:disabled):hover { filter: brightness(1.08); }
+.big-btn--gold {
+  background: linear-gradient(180deg, var(--gold-1), var(--gold-2) 60%, var(--gold-3));
+  color: #2a1c08;
+}
+
+/* ---------- Salas ---------- */
+.rooms-filters { display: flex; gap: 8px; }
+.wood-select {
+  flex: 1; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid var(--gold-3); background: rgba(0,0,0,0.25); color: #f0e2c2;
+  font-family: "Cinzel", serif; font-size: 12px;
+}
+.rooms-list { display: flex; flex-direction: column; gap: 8px; }
+.room-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 9px;
+  background: rgba(0,0,0,0.16); border: 1px solid rgba(125,90,38,0.5);
+}
+.room-icon {
+  width: 34px; height: 34px; border-radius: 8px; flex: none;
+  display: grid; place-items: center; font-size: 16px;
+  background: rgba(0,0,0,0.3); border: 1px solid var(--gold-3); color: var(--gold-1);
+}
+.room-info { flex: 1; min-width: 0; }
+.room-info__name { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); }
+.room-info__meta { margin: 2px 0 0; font-size: 11px; color: var(--ink-soft); }
+.room-count { font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
+.rooms-foot { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+.code-join { display: flex; gap: 8px; }
+.code-join input {
+  flex: 1; min-width: 0; padding: 9px 10px; border-radius: 8px;
+  border: 1px solid var(--gold-3); background: rgba(0,0,0,0.28); color: #f2e4c6;
+  font-family: "Cinzel", serif; font-size: 12px;
+}
+.code-join input::placeholder { color: #9b876a; }
+
+/* ============================================================
+   AJUSTE DE LAYOUT v2: caber en viewport + scroll interno por panel.
+   (Reglas al final = mayor prioridad sobre las base.)
+   ============================================================ */
+
+/* La pantalla del lobby ocupa exactamente el viewport, sin scroll de página. */
+.lobby {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+.lobby-grid { min-height: 0; }
+
+/* Cada panel llena la altura de su columna y reparte su contenido. */
+.lobby-panel {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.lobby-panel__inner {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lobby-panel__title { flex: 0 0 auto; }
+
+/* Zonas que scrollean internamente solo si su contenido no cabe. */
+.friends { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.chat { flex: 0 0 auto; margin-top: 8px; }
+.rooms-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.rooms-foot { flex: 0 0 auto; }
+.seg-tabs, .rooms-filters { flex: 0 0 auto; }
+
+/* Editor de personaje: preview con altura fija visible + controles que scrollean. */
+.char-col .character-preview {
+  flex: 0 0 auto;
+  height: clamp(200px, 34vh, 380px);
+  aspect-ratio: auto;
+  max-height: none;
+}
+.editor-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 2px;
+}
+.save-bar { flex: 0 0 auto; margin-top: 8px; }
+
+/* Iconos dentro de botones: tamaño acotado (arreglo del "+" gigante). */
+.big-btn svg, .mini-btn svg { width: 20px; height: 20px; flex: none; }
+.big-btn--play svg { width: 22px; height: 22px; }
+
+/* Barra de scroll fina y temática para las zonas internas. */
+.friends::-webkit-scrollbar,
+.rooms-list::-webkit-scrollbar,
+.editor-scroll::-webkit-scrollbar { width: 8px; }
+.friends::-webkit-scrollbar-thumb,
+.rooms-list::-webkit-scrollbar-thumb,
+.editor-scroll::-webkit-scrollbar-thumb {
+  background: var(--gold-3);
+  border-radius: 6px;
+}
+
+/* ---------- Selectores de color estilo objetivo (rejilla de muestras) ---------- */
+.color-columns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.color-col { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.color-col__label {
+  font-size: 12px; font-weight: 700; color: var(--ink);
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  width: 100%;
+}
+.swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 5px;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  padding: 0;
+}
+.swatch--active { border-color: var(--gold-1); box-shadow: 0 0 0 2px var(--gold-1); }
+.swatch--custom {
+  position: relative;
+  overflow: hidden;
+  background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+}
+.swatch--custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* ---------- Móvil v2: ajustes finos ---------- */
+@media (max-width: 1180px) {
+  .lobby-panel__inner { overflow: hidden; }
+  .char-col .character-preview { height: clamp(240px, 40vh, 460px); }
+  /* Cabecera más cuadrada y legible */
+  .lobby-header { padding: 8px; gap: 4px; }
+  .lobby-id__name { font-size: 16px; }
+  .lobby-logo__title { font-size: 18px; }
+  .currency { padding: 5px 10px; font-size: 13px; }
+  .icon-btn { width: 34px; height: 34px; }
+  .color-columns { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+}
+
+/* Save-bar: estado + acciones */
+.save-bar__row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap;
+}
+.reset-actions { display: flex; gap: 8px; }
+.mini-btn--ghost {
+  background: transparent; border: 1px solid var(--gold-3); color: var(--ink-soft);
+}
+.mini-btn--ghost:hover { background: rgba(120, 92, 52, 0.14); }
+
+/* La fila de paneles llena la altura del grid (para el scroll interno). */
+.lobby-grid {
+  align-items: stretch;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* ============================================================
+   v3: proporciones de la referencia + banner de título superpuesto
+   ============================================================ */
+
+/* Columnas como en la referencia (≈ 24% / 40% / 28%). */
+@media (min-width: 1181px) {
+  .lobby-grid { grid-template-columns: 24fr 40fr 28fr; }
+}
+
+/* El panel es referencia de posición para el banner. */
+.lobby-panel { position: relative; }
+
+/* Banner de título: placa que se monta sobre el borde superior del panel. */
+.lobby-banner {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -52%);
+  z-index: 3;
+  max-width: 80%;
+  padding: 9px 26px;
+  text-align: center;
+  white-space: nowrap;
+  font-family: "Cinzel Decorative", "Cinzel", serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: var(--gold-1);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+  /* Placa turquesa CSS de respaldo (hasta tener ui/TitleBanner). */
+  background: linear-gradient(180deg, var(--teal-1), var(--teal-2) 60%, var(--teal-3));
+  border: 2px solid var(--gold-2);
+  border-radius: 10px;
+  box-shadow: 0 0 0 3px var(--gold-3), 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+/* Hueco bajo el banner para que el contenido no quede tapado. */
+.lobby-panel__inner { padding-top: 18px; }
+
+/* En móvil el banner se reduce un poco. */
+@media (max-width: 1180px) {
+  .lobby-banner { font-size: 15px; padding: 8px 20px; }
+}
+
+/* ============================================================
+   v4: correcciones de la referencia
+   - logo imagen grande, madera en cabecera, papiro mas oscuro
+   - preview pegado al marco, subpaneles (ColorPanel) con madera
+   - peinado/color de pelo en una linea dentro de minipanels
+   - colores en una linea, cada grupo en su minipanel
+   - banner de titulo a ~2/3 de altura
+   ============================================================ */
+
+/* ---- Logo central grande (sin texto) ---- */
+.lobby-logo { overflow: visible; }
+.lobby-logo__emblem { width: auto; height: 92px; color: var(--gold-1); }
+@media (max-width: 1180px) { .lobby-logo__emblem { height: 64px; } }
+
+/* ---- Banner de titulo: altura reducida (~2/3). Anchura igual. ---- */
+.lobby-banner { padding: 4px 26px; }
+@media (max-width: 1180px) { .lobby-banner { padding: 3px 20px; font-size: 15px; } }
+
+/* ---- Preview del personaje: pegado a la parte superior y los lados del marco ---- */
+.char-col .lobby-panel__inner { padding: 0; gap: 0; }
+.char-col .character-preview {
+  flex: 0 0 auto;
+  width: 100%;
+  height: clamp(220px, 36vh, 400px);
+  aspect-ratio: auto;
+  max-height: none;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+}
+.char-col .editor-scroll { padding: 10px 12px 6px; gap: 10px; }
+.char-col .save-bar { padding: 0 12px 12px; margin-top: 6px; }
+
+/* ---- Subpanel (base sin skin): madera + marco ---- */
+.color-subpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 10px;
+  border-radius: 9px;
+  border: 1px solid var(--gold-3);
+  background:
+    linear-gradient(rgba(0,0,0,0.16), rgba(0,0,0,0.16)),
+    linear-gradient(180deg, var(--wood-l), var(--wood-d));
+}
+
+/* ---- Minipanel reutilizable (base sin skin) ---- */
+.mini-frame {
+  border-radius: 8px;
+  border: 1px solid var(--gold-3);
+  background: linear-gradient(180deg, rgba(74,58,40,0.85), rgba(40,28,16,0.85));
+  padding: 8px;
+}
+
+/* ---- Colores: 4 grupos en una sola linea, cada uno en su minipanel ---- */
+.color-subpanel .color-columns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 8px;
+}
+.color-subpanel .color-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 5px;
+}
+.color-subpanel .color-col__label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+  color: #f1e3c4; text-transform: uppercase;
+}
+.color-subpanel .swatch-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+
+/* Etiquetas de seccion claras sobre madera. */
+.color-subpanel .section-label { color: #f3e7cb; margin: 2px 2px 0; }
+
+/* ---- Peinado: una sola linea (scroll horizontal), seleccionado con borde brillante ---- */
+.hair-frame .hair-selector {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 2px;
+}
+.hair-frame .hair-option { flex: 0 0 auto; width: 58px; background: rgba(0,0,0,0.22); }
+.hair-option--selected {
+  border-color: var(--gold-1);
+  box-shadow: 0 0 0 2px var(--gold-1), 0 0 10px 2px rgba(231, 200, 121, 0.7);
+}
+.hair-frame::-webkit-scrollbar, .haircolor-frame::-webkit-scrollbar { height: 6px; }
+.hair-frame::-webkit-scrollbar-thumb, .haircolor-frame::-webkit-scrollbar-thumb {
+  background: var(--gold-3); border-radius: 6px;
+}
+
+/* ---- Color de pelo: una sola linea, muestras como cuadraditos con borde resaltado ---- */
+.haircolor-frame .hair-color-row {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 7px;
+  padding: 2px;
+}
+.haircolor-frame .swatch,
+.haircolor-frame .color-col__current {
+  flex: 0 0 auto;
+  width: 26px; height: 26px;
+  border-radius: 5px;
+  border: 2px solid #e7d3aa;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.35);
+}
+.haircolor-frame .swatch--active {
+  border-color: var(--gold-1);
+  box-shadow: 0 0 0 2px var(--gold-1), 0 1px 3px rgba(0,0,0,0.5);
+}
+
+/* ---- Chat enmarcado: texto legible sobre madera ---- */
+.chat-log.color-subpanel { max-height: 190px; overflow-y: auto; }
+.chat-log.color-subpanel .chat-msg,
+.chat-log.color-subpanel .chat-msg span { color: #efe2c6; }
+.chat-log.color-subpanel .chat-msg__who { color: #7fe0d4; }
+.chat-log.color-subpanel .chat-msg__time { color: #c7b48f; }
+
+/* ---- Salas: solo el boton de actualizar en la barra de filtros ---- */
+.rooms-filters { justify-content: flex-end; }
+
+/* ---- Boton de enviar (azul pequeno) ---- */
+.mini-btn--send {
+  display: grid; place-items: center;
+  padding: 8px 12px;
+}
+.mini-btn--send svg { width: 18px; height: 18px; }
+
+/* ============================================================
+   v5: cabecera mas baja + logo grande, pildoras centradas/mitad de alto,
+   papiro recortado, margenes de paneles amplios, subpaneles a ras del
+   marco con scroll interno (marco fijo).
+   ============================================================ */
+
+/* ---- Margenes del lobby: mucho mas grandes, sobre todo laterales ---- */
+.lobby { padding: 14px clamp(28px, 5.5vw, 92px) 30px; gap: 14px; }
+@media (max-width: 1180px) { .lobby { padding: 8px; gap: 8px; } }
+
+/* ---- Cabecera a ~3/4 de su alto ---- */
+.lobby-header { padding: 6px 18px; position: relative; }
+.lobby-avatar { width: 42px; height: 42px; font-size: 18px; }
+.xp-bar__track { height: 7px; }
+
+/* ---- Logo central el doble de grande (centrado, puede sobresalir) ---- */
+.lobby-logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -46%);
+  margin: 0;
+  z-index: 4;
+  pointer-events: none;
+  overflow: visible;
+}
+.lobby-logo__emblem { width: auto; height: 158px; }
+img.lobby-logo__emblem { width: auto; height: 158px; }
+@media (max-width: 1180px) { .lobby-logo__emblem, img.lobby-logo__emblem { height: 104px; } }
+
+/* ---- Monedas/gemas: misma altura que los icon-btn (mitad) e icono centrado ---- */
+.icon-btn { width: 36px; height: 36px; }
+.currency {
+  height: 36px;
+  padding: 0 14px;
+  gap: 7px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- Modelo de padding del interior: bloques con padding lateral, los
+        subpaneles lo rompen para quedar a ras del marco. ---- */
+.lobby-panel__inner { padding: 14px 12px; padding-top: 16px; }
+.char-col .lobby-panel__inner { padding: 0 12px; }
+
+/* Subpaneles (chat, codigo, controles de color) a ras del borde del panel. */
+.color-subpanel { margin-left: -12px; margin-right: -12px; padding: 0; }
+
+/* Preview pegado arriba y a los lados del marco. */
+.char-col .character-preview {
+  margin: 0 0px;
+  height: clamp(220px, 34vh, 380px);
+}
+.char-col .editor-scroll { padding: 8px 0 0; }
+.char-col .save-bar { padding: 8px 0 10px; margin-top: 6px; }
+
+/* ---- Marco del subpanel FIJO; el scroll ocurre en el interior ---- */
+.color-subpanel--scroll {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.subpanel-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 8px;
+}
+.subpanel-scroll::-webkit-scrollbar { width: 7px; }
+.subpanel-scroll::-webkit-scrollbar-thumb { background: var(--gold-3); border-radius: 6px; }
+
+/* El contenedor del editor ya no scrollea: lo hace el subpanel interior. */
+.editor-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  padding-right: 0;
+}
+
+/* Chat: marco fijo, mensajes scrollan dentro. */
+.chat-log.color-subpanel { max-height: 210px; }
+.chat-log.color-subpanel .subpanel-scroll { gap: 7px; padding: 8px; }
+
+/* Codigo de sala: subpanel en fila (no es scroll). */
+.code-join.color-subpanel {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  overflow: visible;
+}
+
+/* ============================================================
+   v6: logo el doble, acciones a la derecha, paneles laterales a 2/3,
+   3x separacion entre paneles, 2x frente a cabecera y borde inferior.
+   ============================================================ */
+
+/* ---- Cabecera en flex: identidad a la izq., acciones a la DERECHA ---- */
+.lobby-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  padding: 6px 20px;
+}
+.lobby-id { flex: 0 1 auto; }
+.lobby-actions { flex: 0 0 auto; margin-left: auto; justify-content: flex-end; }
+
+/* ---- Logo central: el doble del tamaño original (92 -> 184) ---- */
+.lobby-logo__emblem, img.lobby-logo__emblem { width: auto; height: 184px; }
+@media (max-width: 1180px) { .lobby-logo__emblem, img.lobby-logo__emblem { height: 120px; } }
+
+/* ---- Separaciones del lobby ---- */
+/* 2x frente a la cabecera (gap vertical) y 2x en el borde inferior. */
+.lobby { gap: 28px; padding-bottom: 60px; }
+
+/* 3x de separacion entre los paneles (gap horizontal del grid). */
+@media (min-width: 1181px) {
+  .lobby-grid {
+    grid-template-columns: 16fr 57fr 19fr; /* laterales a ~2/3, centro mas ancho */
+    column-gap: 42px;
+    row-gap: 0;
+  }
+}
+
+/* ---- Movil: cabecera apilada de nuevo ---- */
+@media (max-width: 1180px) {
+  .lobby { gap: 8px; padding-bottom: 8px; }
+  .lobby-header { flex-direction: column; gap: 4px; }
+  .lobby-actions { margin-left: 0; }
+}
+
+/* ============================================================
+   v7: la zona de paneles ocupa 3/4 del ancho del panel superior,
+   centrada. La cabecera sigue a ancho completo.
+   ============================================================ */
+@media (min-width: 1181px) {
+  .lobby-grid {
+    width: 75%;
+    align-self: center;
+  }
+}
+
+/* ============================================================
+   v8: paneles centrados de verdad + logo el doble (184px) por encima
+   de la regla de skin.css independientemente del orden de carga.
+   ============================================================ */
+@media (min-width: 1181px) {
+  .lobby-grid {
+    width: 75%;
+    margin-left: auto;
+    margin-right: auto;
+    align-self: center;
+    justify-self: center;
+  }
+}
+.lobby-logo__emblem,
+img.lobby-logo__emblem { width: auto; height: 184px; }
+@media (max-width: 1180px) {
+  .lobby-logo__emblem, img.lobby-logo__emblem { height: 120px; }
+}
+
+/* ============================================================
+   v9: centrado forzado de la zona de paneles + margenes nuevos
+   (margen superior total x3; separacion cabecera<->paneles x2).
+   ============================================================ */
+@media (min-width: 1181px) {
+  .lobby > .lobby-grid {
+    width: 75%;
+    max-width: 75%;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    align-self: center !important;
+  }
+  /* Evita que el contenido de los paneles ensanche las columnas y
+     desplace visualmente el bloque. */
+  .lobby-grid > .lobby-panel { min-width: 0; }
+}
+
+/* Margen superior total x3 (14 -> 42) y separacion cabecera<->paneles x2 (28 -> 56). */
+.lobby { padding-top: 42px; gap: 56px; }
+@media (max-width: 1180px) { .lobby { padding-top: 8px; gap: 8px; } }
+
+/* ============================================================
+   v10: panel central el doble de ancho; laterales la mitad (1:2:1).
+   ============================================================ */
+@media (min-width: 1181px) {
+  .lobby-grid { grid-template-columns: 1fr 2fr 1fr; }
+}
+
+/* ============================================================
+   v11: el contenido se ajusta mas a los bordes del marco
+   (menos padding interior; subpaneles/preview a ras siguen cuadrando).
+   ============================================================ */
+.lobby-panel__inner { padding: 10px 6px; padding-top: 12px; }
+.char-col .lobby-panel__inner { padding: 0 0px; }
+
+/* Subpaneles a ras del marco con el nuevo padding (-6 en vez de -12). */
+.color-subpanel { margin-left: -6px; margin-right: -6px; }
+.char-col .character-preview { margin: 0 0px; }
+
+/* ============================================================
+   v12: contenido pegado a la cuerda del marco (menos banda + menos padding).
+   ============================================================ */
+.lobby-panel__inner { padding: 8px 4px; padding-top: 9px; }
+.char-col .lobby-panel__inner { padding: 0 4px; }
+.color-subpanel { margin-left: 0px; margin-right: -4px; }
+.char-col .character-preview { margin: 0 ; height: clamp(220px, 36vh, 400px); }
+
+/* ============================================================
+   v13: contenido casi a ras de la cuerda (banda 11px + padding 2px).
+   PARAMETROS PARA AFINAR EL HUECO CONTENIDO<->CUERDA:
+   - Grosor de banda del marco:  skin.css -> .ui-skinned .wood-frame -> border-width
+   - Padding interior del panel:  este bloque -> .lobby-panel__inner -> padding
+   - Si cambias el padding lateral (el 2px), pon el MISMO valor (en negativo) en
+     .color-subpanel margin y en .char-col .character-preview margin.
+   ============================================================ */
+.lobby-panel__inner { padding: 5px 2px; padding-top: 0px; }
+.char-col .lobby-panel__inner { padding: 0 0px; }
+.color-subpanel { margin-left: -2px; margin-right: -2px; }
+.char-col .character-preview { margin: 0 0px; height: clamp(400px, 36vh, 400px); }
+
+/* ============================================================
+   v14: visor del personaje a ancho total y pegado al borde superior.
+   AJUSTE: el unico numero a tocar es el margen negativo de .character-preview.
+   - Mas negativo (p.ej. -22px) = el visor se acerca/mete mas en el marco.
+   - Menos negativo (p.ej. -8px) = deja mas papiro alrededor.
+   Debe rondar tu border-width del marco (skin.css .wood-frame, hoy 30px).
+   ============================================================ */
+.char-col .lobby-panel__inner { padding: -20; }
+.char-col .character-preview {
+  margin: 0px 0px 0 0px;   /* <-- AJUSTA ESTE VALOR (≈ border-width del marco) */
+  width: auto;
+  height: clamp(240px, 38vh, 420px);
+  border-radius: 14px 14px 10px 10px;
+}
+/* Los controles de abajo recuperan un pequeno margen lateral. */
+.char-col .editor-scroll { padding: 8px 4px 0; }
+.char-col .save-bar { padding: 8px 4px 10px; }
+
+/* ============================================================
+   v15: visor del personaje llenando el marco (sin papiro alrededor)
+   y sin flechas. CLAVE: quitar el overflow:hidden del inner del panel
+   central, que antes recortaba el visor e impedia que el margen hiciera
+   efecto.
+   AJUSTE UNICO: el margen negativo de abajo. Debe acercarse a tu
+   border-width del marco (skin.css .wood-frame, hoy 30px). Mas negativo
+   = mas pegado/metido en la cuerda; menos = deja ver algo de papiro.
+   ============================================================ */
+.char-col .lobby-panel__inner {
+  overflow: visible;
+  padding: 0;
+}
+.char-col .character-preview {
+  margin: -28px -28px 0 -28px;   /* <-- AJUSTA ESTE VALOR (≈ border-width del marco) */
+  width: auto;
+  height: clamp(240px, 40vh, 440px);
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: #0c1622;            /* fondo del visor (sin papiro detras) */
+}
+/* Las flechas ya no existen, pero por si quedara CSS viejo: ocultas. */
+.preview-arrow { display: none !important; }
+
+
+/* ============================================================
+   v16: orden de capas del panel central -> papiro (fondo) < visor < marco.
+   El marco se redibuja como capa superpuesta (::after) por ENCIMA del
+   visor; el visor llena hasta el borde y queda DETRAS del marco y DELANTE
+   del papiro. El banner del titulo se mantiene por encima de todo.
+   ============================================================ */
+.ui-skinned .char-col::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-style: solid;
+  border-width: 30px;                 /* = border-width del marco (.wood-frame) */
+  border-image: var(--ui-panel-frame) 30 30 30 30;
+  pointer-events: none;
+  z-index: 5;
+}
+.lobby-banner { z-index: 6; }
+
+/* Visor: llena hasta el borde del panel y se queda por detras del marco. */
+.char-col .character-preview {
+  margin: -30px -30px 0 -30px;        /* = border-width: llega al borde */
+  position: relative;
+  z-index: 1;
+}
+
+
+/* ============================================================
+   v17: UN SOLO marco en el panel central.
+   - Se quita el marco "real" del borde (border-image: none) dejando solo
+     el border-width transparente como espacio + el papiro de fondo.
+   - La capa ::after (el marco que va por DELANTE del visor) se alinea con
+     el borde real usando inset negativo = border-width.
+   ============================================================ */
+.ui-skinned .char-col {
+  border-image: none;
+  border-color: transparent;
+}
+.ui-skinned .char-col::after {
+  inset: -30px;            /* = border-width del marco: alinea la capa con el borde */
+}
+
+
+/* ============================================================
+   v18: panel central -> visor (mitad sup.) + subpanel de personalizacion
+   (mitad inf.) flush al marco, con los botones DENTRO y sin scroll.
+   ============================================================ */
+
+/* El visor ocupa la mitad superior. */
+.char-col .character-preview { height: clamp(170px, 30vh, 300px); }
+
+/* El subpanel llena el resto, pegado a los bordes interiores del marco. */
+.char-col .color-subpanel.char-controls {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 6px 0 0 0;          /* a ras del contenido = justo dentro del marco */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  overflow: hidden;            /* nada de sliders */
+}
+
+/* Etiquetas compactas. */
+.char-controls .section-label { margin: 0; font-size: 11px; letter-spacing: .3px; }
+
+/* Colores: 4 grupos compactos. */
+.char-controls .color-columns { gap: 6px; padding: 6px; }
+.char-controls .color-col { padding: 5px 3px; gap: 4px; }
+.char-controls .color-col__label { font-size: 10px; }
+.char-controls .swatch-grid { grid-template-columns: repeat(4, 1fr); gap: 3px; }
+
+/* Peinado y Color de pelo, lado a lado para ahorrar alto. */
+.char-controls .hair-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.char-controls .ctrl-block { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+/* Minipanels mas finos dentro del editor. */
+.ui-skinned .char-controls .mini-frame { border-width: 11px; }
+.char-controls .mini-frame { padding: 5px; }
+
+/* Peinado: que quepan todos sin slider (wrap, sin scroll). */
+.char-controls .hair-frame .hair-selector {
+  display: flex;
+  flex-wrap: wrap;
+  overflow: visible;
+  gap: 4px;
+}
+.char-controls .hair-frame .hair-option { flex: 0 0 auto; width: 40px; padding: 3px 2px; }
+.char-controls .hair-option__thumb { width: 28px; height: 28px; }
+.char-controls .hair-option__label { font-size: 9px; }
+
+/* Color de pelo: wrap sin slider. */
+.char-controls .haircolor-frame .hair-color-row {
+  display: flex;
+  flex-wrap: wrap;
+  overflow: visible;
+  gap: 4px;
+}
+.char-controls .haircolor-frame .swatch,
+.char-controls .haircolor-frame .color-col__current { width: 22px; height: 22px; }
+
+/* Botones dentro del subpanel, pegados abajo. */
+.char-controls .save-bar { margin-top: auto; padding: 0; gap: 6px; }
+.char-controls .save-bar__row { gap: 6px; }
+.char-controls .big-btn { height: 40px; font-size: 15px; }
+.char-controls .mini-btn { padding: 5px 10px; font-size: 11px; }
+
+
+/* ============================================================
+   v19: el subpanel de controles, flush al marco como el visor.
+   Se extiende bajo el marco por izquierda/derecha/abajo (= border-width),
+   y el marco (capa ::after) lo recorta limpio. Arriba deja un pequeno
+   hueco respecto al visor.
+   ============================================================ */
+.char-col .color-subpanel.char-controls {
+  margin: 0px -20px -18px -20px;   /* der/izq/abajo = border-width del marco */
+}
+
+
+/* ============================================================
+   v20: contenido del subpanel central en 5 filas, todo visible sin scroll,
+   adaptado a ancho y alto.
+   Fila1 colores · Fila2 peinado · Fila3 color de pelo · Fila4 botones · Fila5 guardar
+   ============================================================ */
+.char-col .color-subpanel.char-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  overflow: hidden;
+  justify-content: space-between;
+}
+.char-controls .cc-row { display: flex; flex-direction: column; gap: 3px; min-height: 0; }
+.char-controls .section-label { margin: 0; font-size: 11px; letter-spacing: .3px; line-height: 1.1; }
+
+/* --- Fila 1: colores (4 grupos a lo ancho) --- */
+.char-controls .color-columns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  padding: 0;
+}
+.ui-skinned .char-controls .color-col.mini-frame { border-width: 10px; }
+.char-controls .color-col { padding: 4px 3px; gap: 3px; }
+.char-controls .color-col__label { font-size: 9px; }
+.char-controls .swatch-grid { grid-template-columns: repeat(4, 1fr); gap: 3px; width: 100%; }
+.char-controls .swatch { border-width: 1px; border-radius: 4px; }
+
+/* --- Fila 2: peinado (todas las miniaturas a lo ancho, sin scroll) --- */
+.ui-skinned .char-controls .hair-frame.mini-frame,
+.ui-skinned .char-controls .haircolor-frame.mini-frame { border-width: 10px; }
+.char-controls .mini-frame { padding: 5px; }
+.char-controls .hair-frame .hair-selector {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  overflow: visible;
+}
+.char-controls .hair-frame .hair-option {
+  width: auto;
+  min-width: 0;
+  padding: 3px 1px;
+  gap: 2px;
+}
+.char-controls .hair-option__thumb { width: 100%; max-width: 30px; aspect-ratio: 1; height: auto; }
+.char-controls .hair-option__label { font-size: 8px; line-height: 1; }
+
+/* --- Fila 3: color de pelo (todas las muestras a lo ancho) --- */
+.char-controls .haircolor-frame .hair-color-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  overflow: visible;
+}
+.char-controls .haircolor-frame .swatch,
+.char-controls .haircolor-frame .color-col__current {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+/* --- Fila 4: estado + botones --- */
+.char-controls .cc-actions {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.char-controls .reset-actions { display: flex; gap: 6px; }
+.char-controls .mini-btn { padding: 4px 9px; font-size: 11px; }
+
+/* --- Fila 5: guardar --- */
+.char-controls .cc-save { height: 38px; font-size: 14px; }
+
+
+
+/* ============================================================
+   v21: SOLO la fila de peinado. Cada selector = cuadrado (aspect-ratio 1)
+   que se reparte a lo ancho del minipanel, igual que los de color de pelo.
+   Sin etiqueta (como los de color); el numero va dentro del cuadrado.
+   ============================================================ */
+.char-controls .hair-frame .hair-selector {
+  display: grid;
+  grid-template-columns: none;   /* anula el auto-fill heredado del estilo base */
+  grid-template-rows: 1fr;       /* una sola fila */
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;        /* todas las columnas iguales */
+  gap: 4px;
+  align-items: center;
+  justify-items: center;         /* cuadrado centrado en su columna -> hueco entre ellos */
+  overflow: visible;
+}
+.char-controls .hair-frame .hair-option {
+  width: 100%;
+  max-width: 30px;               /* <-- tamano del cuadrado; bajalo/subelo a gusto */
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+}
+.char-controls .hair-frame .hair-option__thumb {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: auto;
+  border-radius: 5px;
+}
+.char-controls .hair-frame .hair-option__label { display: none; }
+
+
+/* ============================================================
+   v22: sin titulo "Colores"; titulos de Peinado y Color de pelo DENTRO de
+   sus minipanels; subgrupos de color mas ajustados (contenedores mas bajos).
+   ============================================================ */
+
+/* Titulo dentro del minipanel: pequeno y pegado arriba. */
+.char-controls .inframe-label {
+  margin: 0 0 3px 1px;
+  font-size: 10px;
+  line-height: 1;
+  color: #f3e7cb;
+}
+
+/* Fila de colores: subgrupos mas ajustados a los bordes (menos alto). */
+.char-controls .cc-colors .color-columns { gap: 4px; }
+.ui-skinned .char-controls .color-col.mini-frame { border-width: 7px; }
+.char-controls .color-col { padding: 2px; gap: 2px; }
+.char-controls .color-col__label { font-size: 9px; margin: 0; }
+.char-controls .swatch-grid { gap: 2px; }
+
+/* Minipanels de peinado y color de pelo: mas finos y mas bajos. */
+.ui-skinned .char-controls .hair-frame.mini-frame,
+.ui-skinned .char-controls .haircolor-frame.mini-frame { border-width: 8px; }
+.char-controls .hair-frame.mini-frame,
+.char-controls .haircolor-frame.mini-frame { padding: 4px; }
+
+/* ============================================================
+   v24: aro del jugador 3x, SOBRE el panel (absoluto, como el logo),
+   sin estirar la cabecera. Papiro circular detras (skin.css).
+   ============================================================ */
+.lobby-avatar {
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 126px;
+  height: 126px;
+  border-radius: 50%;
+  font-size: 48px;
+  z-index: 5;
+}
+.lobby-id { padding-left: 140px; }
+
+@media (max-width: 1180px) {
+  .lobby-avatar { left: 8px; width: 84px; height: 84px; font-size: 32px; }
+  .lobby-id { padding-left: 96px; }
+}

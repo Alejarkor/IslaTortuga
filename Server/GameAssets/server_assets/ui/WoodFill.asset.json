@@ -1,0 +1,20 @@
+{
+  "assetKey": "ui/WoodFill",
+  "assetType": "texture",
+  "version": "1",
+  "status": "published",
+  "manifests": [
+    {
+      "manifestId": "manifest_ui_common",
+      "manifestName": "uiCommon",
+      "manifestVersion": "1",
+      "targetType": "global",
+      "targetId": "uiCommon",
+      "manifestStatus": "published",
+      "isCurrent": true,
+      "usage": null,
+      "required": true,
+      "loadPriority": 100
+    }
+  ]
+}

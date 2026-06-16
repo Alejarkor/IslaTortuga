@@ -1,0 +1,189 @@
+/* ============================================================
+   Skin por manifest: aplica los assets de UI (variables --ui-*)
+   sobre las clases existentes. Solo actúa con .ui-skinned.
+   border-image-slice = px de la fuente; border-width = px en pantalla.
+   ============================================================ */
+
+/* ---- Fondo del lobby ---- */
+.ui-skinned .lobby {
+  background-image:
+    linear-gradient(rgba(8, 16, 26, 0.5), rgba(6, 12, 20, 0.72)),
+    var(--ui-lobby-bg);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+/* ---- Paneles: marco 9-slice hueco. El pergamino (oscurecido) va de FONDO
+        del propio marco, asi se ve por detras de las partes transparentes. ---- */
+/* PanelFrame_v002 560x747 - T25 R21 B19 L24 - sin fill (centro hueco) */
+.ui-skinned .wood-frame {
+  border-style: solid;
+  border-width: 30px 30px 30px 30px;
+  border-image: var(--ui-panel-frame) 30 30 30 30;
+  background: var(--ui-parch);
+  background-size: 650px;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+  background-clip: border-box;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  padding: 0;
+}
+/* El interior ya no pinta su propio pergamino: deja ver el del marco. */
+.ui-skinned .parch {
+  background: none;
+  box-shadow: none;
+}
+
+/* ---- Cabecera: marco HeaderFrame (sin fill) + madera tileable de fondo ---- */
+.ui-skinned .lobby-header {
+  border-style: solid;
+  border-width: 20px 20px 20px 20px;
+  border-image: var(--ui-header) 20 20 20 20;
+  background: var(--ui-wood);
+  background-size: 240px;
+  background-repeat: repeat;
+  box-shadow: none;
+}
+
+/* ---- Banner de titulo (ButtonTeal_normal). Altura ~2/3 (border-width menor). ---- */
+.ui-skinned .lobby-banner {
+  border-style: solid;
+  border-width: 15px 15px 15px 15px;
+  border-image: var(--ui-title-banner, var(--ui-btn-teal)) 10 10 10 10 fill;
+  background: none;
+  box-shadow: none;
+  border-radius: 20;
+  color: #f3ead2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+/* ---- Botones grandes (Guardar, Crear sala, JUGAR) ---- */
+.ui-skinned .big-btn,
+.ui-skinned .big-btn--gold,
+.ui-skinned .big-btn--play {
+  border-style: solid;
+  border-width: 13px 18px 15px 18px;
+  border-image: var(--ui-btn-teal) 14 20 16 20 fill;
+  background: none;
+  box-shadow: none;
+}
+.ui-skinned .big-btn:not(:disabled):hover { filter: brightness(1.08); }
+.ui-skinned .big-btn:not(:disabled):active { transform: translateY(1px); }
+
+/* ---- Boton principal del login ---- */
+.ui-skinned .login-submit {
+  border-style: solid;
+  border-width: 20px 20px 20px 20px;
+  border-image: var(--ui-btn-teal) 14 20 16 20 fill;
+  background: none;
+  box-shadow: none;
+}
+
+/* ---- Botones pequenos (Invitar, Unirse, Aceptar, Enviar) ---- */
+/* ButtonSmall 87x39 - T12 R16 B14 L16 (fill) */
+.ui-skinned .mini-btn {
+  border-style: solid;
+  border-width: 10px 13px 12px 13px;
+  border-image: var(--ui-btn-small, var(--ui-btn-teal)) 12 16 14 16 fill;
+  background: none;
+}
+
+/* ---- Campos de texto ---- */
+.ui-skinned .login-input,
+.ui-skinned .chat-input,
+.ui-skinned .code-join input {
+  border-style: solid;
+  border-width: 11px 13px 13px 13px;
+  border-image: var(--ui-input) 14 16 16 16 fill;
+  background: none;
+  box-shadow: none;
+}
+
+/* ---- Botones de icono de cabecera/chat: MiniPanel ---- */
+.ui-skinned .icon-btn {
+  border: none;
+  background: var(--ui-minipanel) center / 100% 100% no-repeat;
+  display: grid;
+  place-items: center;
+}
+
+/* ---- Pildoras de moneda/gema: MiniPanel ---- */
+.ui-skinned .currency {
+  border: none;
+  background: var(--ui-minipanel) center / 100% 100% no-repeat;
+  box-shadow: none;
+}
+.ui-skinned .currency__coin { background: var(--ui-coin, none) center / contain no-repeat; }
+.ui-skinned .currency__gem { background: var(--ui-gem, none) center / contain no-repeat; transform: none; }
+
+/* ---- Aro del avatar (cabecera): AvatarFrame ---- */
+.ui-skinned .lobby-avatar {
+  background: none;
+  border: none;
+  box-shadow: none;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  color: #2a1c08;
+}
+.ui-skinned .lobby-avatar::before {
+  content: "";
+  position: absolute;
+  inset: 13%;
+  border-radius: 50%;
+  background: var(--ui-parch) center / cover no-repeat;
+  z-index: -1;
+}
+.ui-skinned .lobby-avatar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ui-avatar) center / contain no-repeat;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ---- Subpanel (controles de color, chat, unirse-codigo): ColorPanel + madera ---- */
+/* ColorPanel 522x345 - T9 R8 B7 L8 (sin fill, centro = madera) */
+.ui-skinned .color-subpanel {
+  border-style: solid;
+  border-width: 10px 10px 10px 10px;
+  border-image: var(--ui-color-panel) 8 8 8 8;
+  background: var(--ui-wood);
+  background-size: 200px;
+  background-repeat: repeat;
+}
+
+/* ---- Minipanel reutilizable (grupos de color, peinado, color de pelo) ---- */
+.ui-skinned .mini-frame {
+  border-style: solid;
+  border-width: 15px 15px 15px 15px;
+  border-image: var(--ui-minipanel) 20 20 20 20 fill;
+  background: none;
+}
+
+/* ---- Pestanas: TabActive / TabInactive ---- */
+.ui-skinned .seg-tabs { background: none; border: none; padding: 0; gap: 4px; }
+.ui-skinned .seg-tab {
+  border-style: solid;
+  border-width: 13px 16px 6px 16px;
+  border-image: var(--ui-tab-off) 20 24 8 24 fill;
+  background: none;
+  color: #e7d8b6;
+}
+.ui-skinned .seg-tab--active { border-image-source: var(--ui-tab-on); color: #2a1c08; }
+
+/* ---- Filas de sala ---- */
+.ui-skinned .room-row { border: none; }
+
+/* ---- Logo como imagen (grande en cabecera) ---- */
+img.login-brand__emblem { width: 96px; height: 96px; object-fit: contain; }
+img.lobby-logo__emblem { width: auto; height: 184px; object-fit: contain; }
+
+/* Botones "fantasma" (cancelar/restaurar). */
+.ui-skinned .mini-btn--ghost {
+  border: 1px solid var(--gold-3);
+  border-image: none;
+  background: transparent;
+}

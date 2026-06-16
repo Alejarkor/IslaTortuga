@@ -1,0 +1,32 @@
+{
+  "assetKey": "models/Pelos",
+  "assetType": "model",
+  "version": "3",
+  "status": "published",
+  "manifests": [
+    {
+      "manifestId": "manifest_player_editor_pregame_v001",
+      "manifestName": "playerEditorPregame",
+      "manifestVersion": "1",
+      "targetType": "global",
+      "targetId": "playerEditorPregame",
+      "manifestStatus": "published",
+      "isCurrent": true,
+      "usage": null,
+      "required": true,
+      "loadPriority": 100
+    },
+    {
+      "manifestId": "manifest_ui_common",
+      "manifestName": "uiCommon",
+      "manifestVersion": "1",
+      "targetType": "global",
+      "targetId": "uiCommon",
+      "manifestStatus": "published",
+      "isCurrent": true,
+      "usage": null,
+      "required": true,
+      "loadPriority": 100
+    }
+  ]
+}

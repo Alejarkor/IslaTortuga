@@ -1,0 +1,8 @@
+Suelta aquí la lámina/spritesheet de UI a la máxima resolución (PNG original del
+generador, no captura). Nómbrala, por ejemplo: ui_sheet_v1.png
+
+Luego se procesa con:
+  python3 tools/slice_assets.py art_src/ui_sheet_v1.png art_src/out
+
+Genera: PNGs individuales con transparencia + una hoja de contacto de verificación
+(_contact_sheet.png) + un slices.json con los insets de 9-slice.
