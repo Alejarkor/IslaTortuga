@@ -1,6 +1,10 @@
+import "dotenv/config";
 import express, { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import { Pool } from "pg";
+import { getRedis } from "./redis";
+import { HttpGameServerControlClient } from "./gameserver/controlClient";
+import { buildRoomServices, createRoomsRouter } from "./rooms/routes";
 
 const app = express();
 app.use(express.json());
@@ -1701,6 +1705,14 @@ app.post(
     }
   }
 );
+
+// --- Salas y tickets (Fase 1) ---
+const controlClient = new HttpGameServerControlClient({
+  baseUrl: process.env.GAME_SERVER_CONTROL_URL ?? "http://localhost:8080",
+  token: process.env.GS_CONTROL_TOKEN
+});
+const roomServices = buildRoomServices(getRedis(), controlClient);
+app.use(createRoomsRouter(roomServices));
 
 app.listen(port, () => {
   console.log(`GameApi listening on port ${port}`);

@@ -1,0 +1,1183 @@
+{
+  "info": {
+    "name": "IslaTortuga · API (Fase 0-1)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Colección end-to-end: GameApi (auth, perfil, amigos, salas/tickets) y ControlApi del Game Server. Las variables (playerId, roomId, matchId, tickets) se capturan solas; ejecuta las carpetas en orden o usa el Collection Runner."
+  },
+  "item": [
+    {
+      "name": "0. Salud",
+      "item": [
+        {
+          "name": "GameApi · health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/health",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "health"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Game Server · health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameServerUrl}}/health",
+              "host": [
+                "{{gameServerUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Game Server · capacity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameServerUrl}}/capacity",
+              "host": [
+                "{{gameServerUrl}}"
+              ],
+              "path": [
+                "capacity"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Register · Jugador 1 (host)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/auth/register",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{p1_username}}\",\n  \"email\": \"{{p1_email}}\",\n  \"password\": \"secret123\",\n  \"nickname\": \"{{p1_nickname}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Crea P1. Guarda p1_playerId. Usa username/email aleatorios para no colisionar."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const s=Date.now();",
+                  "pm.collectionVariables.set(\"p1_username\",\"ana_\"+s);",
+                  "pm.collectionVariables.set(\"p1_email\",\"ana_\"+s+\"@test.com\");",
+                  "pm.collectionVariables.set(\"p1_nickname\",\"Ana\"+s);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201\", function(){ pm.response.to.have.status(201); });",
+                  "const j=pm.response.json();",
+                  "pm.collectionVariables.set(\"p1_playerId\", j.profile.player_id);",
+                  "pm.collectionVariables.set(\"p1_userId\", j.user.user_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register · Jugador 2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/auth/register",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{p2_username}}\",\n  \"email\": \"{{p2_email}}\",\n  \"password\": \"secret123\",\n  \"nickname\": \"{{p2_nickname}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const s=Date.now();",
+                  "pm.collectionVariables.set(\"p2_username\",\"beto_\"+s);",
+                  "pm.collectionVariables.set(\"p2_email\",\"beto_\"+s+\"@test.com\");",
+                  "pm.collectionVariables.set(\"p2_nickname\",\"Beto\"+s);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201\", function(){ pm.response.to.have.status(201); });",
+                  "const j=pm.response.json();",
+                  "pm.collectionVariables.set(\"p2_playerId\", j.profile.player_id);",
+                  "pm.collectionVariables.set(\"p2_userId\", j.user.user_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login · Jugador 1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/auth/login",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"{{p1_username}}\",\n  \"password\": \"secret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Perfil y stats",
+      "item": [
+        {
+          "name": "Get profile · P1",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/profiles/{{p1_playerId}}",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "profiles",
+                "{{p1_playerId}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get stats · P1",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/stats/{{p1_playerId}}",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "stats",
+                "{{p1_playerId}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Patch appearance · P1",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/profiles/{{p1_playerId}}/appearance",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "profiles",
+                "{{p1_playerId}}",
+                "appearance"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appearance\": {\n    \"skin\": \"default\",\n    \"hat\": \"straw\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Amigos",
+      "item": [
+        {
+          "name": "Enviar solicitud (P1 -> P2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/friend-requests",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "friend-requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromPlayerId\": \"{{p1_playerId}}\",\n  \"toPlayerId\": \"{{p2_playerId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201\", function(){ pm.response.to.have.status(201); });",
+                  "const j=pm.response.json();",
+                  "pm.collectionVariables.set(\"friendRequestId\", j.friendRequest.friend_request_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Entrantes (P2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/friend-requests/{{p2_playerId}}/incoming",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "friend-requests",
+                "{{p2_playerId}}",
+                "incoming"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Salientes (P1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/friend-requests/{{p1_playerId}}/outgoing",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "friend-requests",
+                "{{p1_playerId}}",
+                "outgoing"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aceptar (P2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/friend-requests/{{friendRequestId}}/accept",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "friend-requests",
+                "{{friendRequestId}}",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{p2_playerId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lista de amigos (P1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/friends/{{p1_playerId}}",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "friends",
+                "{{p1_playerId}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Salas (flujo)",
+      "item": [
+        {
+          "name": "1) Crear sala (host P1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/rooms",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "rooms"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hostPlayerId\": \"{{p1_playerId}}\",\n  \"nickname\": \"{{p1_nickname}}\",\n  \"maxPlayers\": 4,\n  \"mapId\": \"beach_map_01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 201\", function(){ pm.response.to.have.status(201); });",
+                  "const j=pm.response.json();",
+                  "pm.collectionVariables.set(\"roomId\", j.room.roomId);",
+                  "pm.collectionVariables.set(\"roomCode\", j.room.code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2) Ver sala",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/rooms/{{roomId}}",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "rooms",
+                "{{roomId}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3) Unirse (P2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/rooms/{{roomId}}/join",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "rooms",
+                "{{roomId}}",
+                "join"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{p2_playerId}}\",\n  \"nickname\": \"{{p2_nickname}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4) Ready P1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/rooms/{{roomId}}/ready",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "rooms",
+                "{{roomId}}",
+                "ready"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{p1_playerId}}\",\n  \"ready\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5) Ready P2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/rooms/{{roomId}}/ready",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "rooms",
+                "{{roomId}}",
+                "ready"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{p2_playerId}}\",\n  \"ready\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });",
+                  "const j=pm.response.json();",
+                  "pm.test(\"ready_check\", ()=> pm.expect(j.room.state).to.eql(\"ready_check\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6) Lanzar partida",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/rooms/{{roomId}}/launch",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "rooms",
+                "{{roomId}}",
+                "launch"
+              ]
+            },
+            "description": "Requiere Game Server (Unity) levantado: el GameApi llama a create-match."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });",
+                  "const j=pm.response.json();",
+                  "pm.collectionVariables.set(\"matchId\", j.matchId);",
+                  "pm.collectionVariables.set(\"gatewayPort\", j.gateway.port);",
+                  "if(j.tickets&&j.tickets[0]) pm.collectionVariables.set(\"ticket1\", j.tickets[0].ticketId);",
+                  "if(j.tickets&&j.tickets[1]) pm.collectionVariables.set(\"ticket2\", j.tickets[1].ticketId);",
+                  "pm.test(\"un ticket por jugador\", ()=> pm.expect(j.tickets.length).to.eql(2));",
+                  "pm.test(\"sala in_game\", ()=> pm.expect(j.room.state).to.eql(\"in_game\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7) Ver sala (in_game)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/rooms/{{roomId}}",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "rooms",
+                "{{roomId}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8) Salir (P2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/rooms/{{roomId}}/leave",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "rooms",
+                "{{roomId}}",
+                "leave"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{p2_playerId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Game Server control",
+      "item": [
+        {
+          "name": "Create match",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-control-token",
+                "value": "{{gsControlToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{gameServerUrl}}/control/create-match",
+              "host": [
+                "{{gameServerUrl}}"
+              ],
+              "path": [
+                "control",
+                "create-match"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maxPlayers\": 8,\n  \"mapId\": \"beach_map_01\",\n  \"players\": [\n    \"{{p1_playerId}}\",\n    \"{{p2_playerId}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });",
+                  "const j=pm.response.json();",
+                  "pm.collectionVariables.set(\"gsMatchId\", j.matchId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Capacity (tras crear)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameServerUrl}}/capacity",
+              "host": [
+                "{{gameServerUrl}}"
+              ],
+              "path": [
+                "capacity"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stop match",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-control-token",
+                "value": "{{gsControlToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{gameServerUrl}}/control/stop-match",
+              "host": [
+                "{{gameServerUrl}}"
+              ],
+              "path": [
+                "control",
+                "stop-match"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": \"{{gsMatchId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stop match de la sala (cleanup)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-control-token",
+                "value": "{{gsControlToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{gameServerUrl}}/control/stop-match",
+              "host": [
+                "{{gameServerUrl}}"
+              ],
+              "path": [
+                "control",
+                "stop-match"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": \"{{matchId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Assets (referencia)",
+      "item": [
+        {
+          "name": "Manifest (por target)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/assets/manifest?targetType=map&targetId=beach_map_01",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "assets",
+                "manifest"
+              ],
+              "query": [
+                {
+                  "key": "targetType",
+                  "value": "map"
+                },
+                {
+                  "key": "targetId",
+                  "value": "beach_map_01"
+                }
+              ]
+            },
+            "description": "Devuelve 404 si no hay manifest sembrado; queda como referencia."
+          },
+          "response": []
+        },
+        {
+          "name": "Meta de un asset file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/assets/file/{{assetFileId}}/meta",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "assets",
+                "file",
+                "{{assetFileId}}",
+                "meta"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "gameApiUrl",
+      "value": "http://localhost:3001"
+    },
+    {
+      "key": "gameServerUrl",
+      "value": "http://localhost:8090"
+    },
+    {
+      "key": "gsControlToken",
+      "value": ""
+    },
+    {
+      "key": "p1_playerId",
+      "value": ""
+    },
+    {
+      "key": "p2_playerId",
+      "value": ""
+    },
+    {
+      "key": "p1_nickname",
+      "value": ""
+    },
+    {
+      "key": "p2_nickname",
+      "value": ""
+    },
+    {
+      "key": "roomId",
+      "value": ""
+    },
+    {
+      "key": "roomCode",
+      "value": ""
+    },
+    {
+      "key": "matchId",
+      "value": ""
+    },
+    {
+      "key": "gsMatchId",
+      "value": ""
+    },
+    {
+      "key": "ticket1",
+      "value": ""
+    },
+    {
+      "key": "ticket2",
+      "value": ""
+    },
+    {
+      "key": "gatewayPort",
+      "value": ""
+    },
+    {
+      "key": "friendRequestId",
+      "value": ""
+    },
+    {
+      "key": "assetFileId",
+      "value": ""
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+    "name": "IslaTortuga.GameServer",
+    "rootNamespace": "IslaTortuga.GameServer",
+    "references": [
+        "IslaTortuga.Shared"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -23,6 +23,16 @@ services:
       - postgres
 
 
+  redis:
+    image: redis:7
+    container_name: islaT_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+
   game-api:
     build: ../GameApi
     container_name: islaT_game_api
@@ -35,10 +45,15 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       ASSET_ADMIN_TOKEN: ${ASSET_ADMIN_TOKEN}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      GAME_SERVER_CONTROL_URL: ${GAME_SERVER_CONTROL_URL}
+      GS_CONTROL_TOKEN: ${GS_CONTROL_TOKEN}
     ports:
       - "${GAME_API_PORT}:${GAME_API_PORT}"
     depends_on:
       - postgres
+      - redis
 
   web-server:
     build: ../WebServer
@@ -58,3 +73,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:

@@ -1,5 +1,11 @@
+GUÍA COMPLETA DE ARRANQUE Y PRUEBAS: ../COMO_LANZAR_Y_PROBAR.md
+
+NOTA: el docker-compose ahora incluye también Redis (salas/tickets). El Game Server
+(Unity) escucha en el 8090, así que Adminer se queda en su 8080 de siempre.
+
 -para exportar un schema (cmd en donde el archivo yml de la base de datos):	New-Item -ItemType Directory -Force migrations
 										docker compose exec -T postgres pg_dump -U admin -d islaT_DB --schema-only --no-owner --no-privileges > migrations/000_current_schema.sql
 
--Para levantar los conentendores: 						docker compose up -d --build
+-Para levantar TODOS los conentendores: 					docker compose up -d --build
+-Para levantar solo BD + Redis (modo recomendado de pruebas):			docker compose up -d postgres redis
 -Para reconstruir el schema:							En migrations -> Get-Content -Raw .\migrations\000_current_schema.sql | docker compose exec -T postgres psql -U admin -d islaT_DB
