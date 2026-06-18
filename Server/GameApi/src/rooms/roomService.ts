@@ -220,6 +220,41 @@ export class RoomService {
   }
 
   /**
+   * Lista las salas a las que un jugador podría unirse: públicas, en pre-juego
+   * (waiting/ready_check) y con hueco libre. Las salas caducadas (TTL) se ignoran.
+   */
+  async listJoinableRooms(): Promise<Room[]> {
+    const ids = await this.rooms.listIds();
+    const result: Room[] = [];
+    for (const id of ids) {
+      const room = await this.rooms.get(id);
+      if (!room) {
+        continue;
+      }
+      if (room.isPrivate) {
+        continue;
+      }
+      if (room.state !== "waiting" && room.state !== "ready_check") {
+        continue;
+      }
+      if (room.members.length >= room.maxPlayers) {
+        continue;
+      }
+      result.push(room);
+    }
+    return result;
+  }
+
+  /** Une a un jugador a una sala localizada por su código. */
+  async joinByCode(code: string, input: JoinRoomInput): Promise<Room> {
+    const room = await this.rooms.getByCode(code);
+    if (!room) {
+      throw new RoomNotFoundError();
+    }
+    return this.joinRoom(room.roomId, input);
+  }
+
+  /**
    * Sincroniza el estado de pre-juego (waiting <-> ready_check) según si todos los
    * miembros están listos. No toca estados que no sean de pre-juego.
    */

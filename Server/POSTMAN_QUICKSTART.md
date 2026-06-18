@@ -53,3 +53,12 @@ curl -s -X POST $API/internal/rooms/<roomId>/launch
 ```
 (En este ejemplo con curl se usan playerIds inventados; en Postman se usan los reales
 de registro. Las salas no validan que el playerId exista en la BD.)
+
+## Reutilizar los mismos jugadores entre pruebas
+La carpeta **1. Auth** usa credenciales fijas (`jugador1` / `jugador2`, password `secret123`):
+
+- **La primera vez:** ejecuta `Registrar P1` y `Registrar P2` (crean los usuarios; si ya existen dan 409, sin problema).
+- **Cada sesión a partir de entonces:** ejecuta solo `Login P1` y `Login P2`. Recuperan el `playerId` sin crear usuarios nuevos.
+- Luego ya puedes lanzar la carpeta `4. Salas` tantas veces como quieras.
+
+> Como cambió la colección, **re-impórtala** en Postman (File → Import → Replace).

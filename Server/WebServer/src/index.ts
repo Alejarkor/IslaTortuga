@@ -21,7 +21,27 @@ app.use(
 
 const port = Number(process.env.PORT ?? 3000);
 const gameApiUrl = process.env.GAME_API_URL ?? "http://localhost:3001";
-const jwtSecret = process.env.JWT_SECRET ?? "dev_secret_change_me";
+const isProd = process.env.NODE_ENV === "production";
+const DEFAULT_DEV_SECRET = "dev_secret_change_me";
+const jwtSecret = process.env.JWT_SECRET ?? DEFAULT_DEV_SECRET;
+
+// En producción exigimos un secreto propio: arrancar con el de desarrollo
+// permitiría a cualquiera forjar tokens de sesión válidos.
+if (isProd && (!process.env.JWT_SECRET || jwtSecret === DEFAULT_DEV_SECRET)) {
+  throw new Error(
+    "JWT_SECRET es obligatorio en producción y no puede ser el valor por defecto de desarrollo."
+  );
+}
+
+// Opciones de la cookie de sesión, centralizadas. Secure solo en producción
+// (en local sobre HTTP, Secure impediría que el navegador enviara la cookie).
+const sessionCookieOptions = {
+  httpOnly: true as const,
+  sameSite: "lax" as const,
+  secure: isProd,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: "/"
+};
 
 type SessionPayload = {
   userId: string;
@@ -124,12 +144,7 @@ app.post("/api/auth/register", async (req, res) => {
     nickname: apiResponse.data.profile.nickname
   });
 
-  res.cookie("session", token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: false,
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
+  res.cookie("session", token, sessionCookieOptions);
 
   return res.status(apiResponse.status).json(apiResponse.data);
 });
@@ -151,18 +166,13 @@ app.post("/api/auth/login", async (req, res) => {
     nickname: apiResponse.data.profile.nickname
   });
 
-  res.cookie("session", token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: false,
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
+  res.cookie("session", token, sessionCookieOptions);
 
   return res.status(apiResponse.status).json(apiResponse.data);
 });
 
 app.post("/api/auth/logout", (_req, res) => {
-  res.clearCookie("session");
+  res.clearCookie("session", { path: "/" });
 
   return res.json({
     ok: true
@@ -355,6 +365,115 @@ app.get("/assets/manifest", async (req, res) => {
 
   return res.status(apiResponse.status).json(apiResponse.data);
 });
+
+
+//------------------------------------ SALAS (proxy autenticado) ------------------------------------
+// El playerId/nickname SIEMPRE salen de la sesión verificada (JWT), nunca del
+// cuerpo que envía el cliente: así un usuario no puede actuar como otro.
+
+app.get("/api/rooms", authMiddleware, async (_req: AuthenticatedRequest, res) => {
+  const r = await forwardJson(`${gameApiUrl}/internal/rooms`);
+  return res.status(r.status).json(r.data);
+});
+
+app.post("/api/rooms", authMiddleware, async (req: AuthenticatedRequest, res) => {
+  const r = await forwardJson(`${gameApiUrl}/internal/rooms`, {
+    method: "POST",
+    body: {
+      hostPlayerId: req.session!.playerId,
+      nickname: req.session!.nickname,
+      maxPlayers: req.body?.maxPlayers,
+      mapId: req.body?.mapId,
+      isPrivate: req.body?.isPrivate
+    }
+  });
+  return res.status(r.status).json(r.data);
+});
+
+app.post(
+  "/api/rooms/join-by-code",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const r = await forwardJson(`${gameApiUrl}/internal/rooms/join-by-code`, {
+      method: "POST",
+      body: {
+        code: req.body?.code,
+        playerId: req.session!.playerId,
+        nickname: req.session!.nickname
+      }
+    });
+    return res.status(r.status).json(r.data);
+  }
+);
+
+app.get(
+  "/api/rooms/:roomId",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const r = await forwardJson(
+      `${gameApiUrl}/internal/rooms/${req.params.roomId}`
+    );
+    return res.status(r.status).json(r.data);
+  }
+);
+
+app.post(
+  "/api/rooms/:roomId/join",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const r = await forwardJson(
+      `${gameApiUrl}/internal/rooms/${req.params.roomId}/join`,
+      {
+        method: "POST",
+        body: {
+          playerId: req.session!.playerId,
+          nickname: req.session!.nickname
+        }
+      }
+    );
+    return res.status(r.status).json(r.data);
+  }
+);
+
+app.post(
+  "/api/rooms/:roomId/leave",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const r = await forwardJson(
+      `${gameApiUrl}/internal/rooms/${req.params.roomId}/leave`,
+      { method: "POST", body: { playerId: req.session!.playerId } }
+    );
+    return res.status(r.status).json(r.data);
+  }
+);
+
+app.post(
+  "/api/rooms/:roomId/ready",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const r = await forwardJson(
+      `${gameApiUrl}/internal/rooms/${req.params.roomId}/ready`,
+      {
+        method: "POST",
+        body: { playerId: req.session!.playerId, ready: req.body?.ready }
+      }
+    );
+    return res.status(r.status).json(r.data);
+  }
+);
+
+app.post(
+  "/api/rooms/:roomId/launch",
+  authMiddleware,
+  async (req: AuthenticatedRequest, res) => {
+    const r = await forwardJson(
+      `${gameApiUrl}/internal/rooms/${req.params.roomId}/launch`,
+      { method: "POST" }
+    );
+    return res.status(r.status).json(r.data);
+  }
+);
+
 
 app.listen(port, () => {
   console.log(`WebServer listening on port ${port}`);

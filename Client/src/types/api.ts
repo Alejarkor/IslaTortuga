@@ -88,3 +88,55 @@ export type ManifestResponse = {
   publishedAt: string | null;
   files: ManifestFile[];
 };
+
+// ---- Salas y tickets (Fase 1) ----
+export type RoomState =
+  | "waiting"
+  | "ready_check"
+  | "starting"
+  | "in_game"
+  | "finished"
+  | "cancelled";
+
+export type RoomRole = "master" | "player";
+
+export type RoomMember = {
+  playerId: string;
+  nickname: string;
+  isReady: boolean;
+  role: RoomRole;
+  joinedAt: string;
+};
+
+export type Room = {
+  roomId: string;
+  code: string;
+  hostPlayerId: string;
+  state: RoomState;
+  maxPlayers: number;
+  mapId: string;
+  isPrivate: boolean;
+  matchId: string | null;
+  members: RoomMember[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RoomsListResponse = { ok: boolean; rooms: Room[] };
+export type RoomResponse = { ok: boolean; room: Room };
+
+export type JoinTicket = {
+  ticketId: string;
+  matchId: string;
+  playerId: string;
+  issuedAt: string;
+  expiresAt: string;
+};
+
+export type LaunchResponse = {
+  ok: boolean;
+  matchId: string;
+  gateway: { host: string; port: number };
+  room: Room;
+  tickets: JoinTicket[];
+};

@@ -33,6 +33,17 @@ docker compose up -d postgres redis
 ```powershell
 # desde Server\Game_Database
 Get-Content -Raw .\migrations\000_current_schema.sql | docker compose exec -T postgres psql -U admin -d islaT_DB
+# arreglo necesario (bug de esquema: friend_requests.resolved_at):
+Get-Content -Raw .\migrations\004_fix_friend_requests_resolved_at.sql | docker compose exec -T postgres psql -U admin -d islaT_DB
+```
+
+Para que el **personaje, los pelos y los assets de la interfaz** se vean, hay que
+sembrar el registro de assets (tablas de assets + manifests):
+```powershell
+# tablas de assets (idempotente):
+Get-Content -Raw .\migrations\003_create_asset_core.sql | docker compose exec -T postgres psql -U admin -d islaT_DB
+# registro de assets (ficheros + manifests, reconstruido desde los sidecars):
+Get-Content -Raw .\seeds\002_assets_seed.sql | docker compose exec -T postgres psql -U admin -d islaT_DB
 # (opcional) tablas de assets:
 Get-Content -Raw .\migrations\003_create_asset_core.sql | docker compose exec -T postgres psql -U admin -d islaT_DB
 # (opcional) datos de ejemplo:

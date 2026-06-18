@@ -34,6 +34,12 @@ export function getRedis(): Redis {
     maxRetriesPerRequest: 3
   });
 
+  // Sin este manejador, ioredis emite "Unhandled error event" y un fallo de
+  // conexión podría tumbar el proceso. Aquí lo registramos de forma concisa.
+  client.on("error", (err: Error) => {
+    console.error("[redis] error de conexión:", err.message);
+  });
+
   return client;
 }
 

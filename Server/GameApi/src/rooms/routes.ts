@@ -69,6 +69,27 @@ export function createRoomsRouter(services: RoomServices): Router {
   );
 
   router.get(
+    "/internal/rooms",
+    handle(async (_req, res) => {
+      const rooms = await service.listJoinableRooms();
+      res.json({ ok: true, rooms });
+    })
+  );
+
+  router.post(
+    "/internal/rooms/join-by-code",
+    handle(async (req, res) => {
+      const { code, playerId, nickname } = req.body ?? {};
+      if (!code || !playerId || !nickname) {
+        res.status(400).json({ ok: false, error: "code, playerId y nickname son obligatorios" });
+        return;
+      }
+      const room = await service.joinByCode(code, { playerId, nickname });
+      res.json({ ok: true, room });
+    })
+  );
+
+  router.get(
     "/internal/rooms/:roomId",
     handle(async (req, res) => {
       const room = await service.getRoom(req.params.roomId);

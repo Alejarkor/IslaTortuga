@@ -1,23 +1,37 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { fetchFriends, fetchIncomingRequests } from "@/api/friends.api";
+import {
+  fetchFriends,
+  fetchIncomingRequests,
+  sendFriendRequest,
+  acceptFriendRequest,
+  rejectFriendRequest
+} from "@/api/friends.api";
+import { ApiError } from "@/api/httpClient";
 import { SendIcon } from "@/features/auth/PirateIcons";
 
 type Tab = "amigos" | "solicitudes";
 
-/** Mensajes de chat de ejemplo (no hay backend de chat todavía). */
+function errText(err: unknown): string | null {
+  if (!err) return null;
+  return err instanceof ApiError ? err.message : "Algo salió mal.";
+}
+
+/** Mensajes de chat de ejemplo — el chat en tiempo real llega en una fase posterior. */
 const MOCK_CHAT = [
   { who: "CapitánRayo", time: "21:03", text: "¿Listos para una aventura?" },
-  { who: "Tú", time: "21:03", text: "¡Siempre! ¿Sala o creamos una?" },
-  { who: "MarinaAzul", time: "21:04", text: "Creo una sala en 2 min, aviso." }
+  { who: "Tú", time: "21:03", text: "¡Siempre! ¿Sala o creamos una?" }
 ];
 
 /**
- * Panel izquierdo: Amigos y Chat.
+ * Panel izquierdo: Amigos y Chat (el chat sigue siendo demo).
  */
 export function FriendsPanel() {
   const [tab, setTab] = useState<Tab>("amigos");
+  const [nick, setNick] = useState("");
+  const [sentOk, setSentOk] = useState(false);
+  const qc = useQueryClient();
 
   const friendsQuery = useQuery({
     queryKey: ["friends"],
@@ -31,11 +45,30 @@ export function FriendsPanel() {
   const friends = friendsQuery.data?.friends ?? [];
   const requests = requestsQuery.data?.incomingRequests ?? [];
 
+  const refreshSocial = () => {
+    qc.invalidateQueries({ queryKey: ["friends"] });
+  };
+
+  const sendMut = useMutation({
+    mutationFn: () => sendFriendRequest(nick.trim()),
+    onSuccess: () => {
+      setNick("");
+      setSentOk(true);
+    }
+  });
+  const acceptMut = useMutation({
+    mutationFn: (requestId: string) => acceptFriendRequest(requestId),
+    onSuccess: refreshSocial
+  });
+  const rejectMut = useMutation({
+    mutationFn: (requestId: string) => rejectFriendRequest(requestId),
+    onSuccess: refreshSocial
+  });
+
   return (
     <div className="lobby-panel char-panel wood-frame">
       <div className="lobby-banner">Amigos y Chat</div>
       <div className="parch lobby-panel__inner">
-
         <div className="seg-tabs">
           <button
             className={`seg-tab ${tab === "amigos" ? "seg-tab--active" : ""}`}
@@ -48,18 +81,42 @@ export function FriendsPanel() {
             onClick={() => setTab("solicitudes")}
           >
             Solicitudes
-            {requests.length > 0 && (
-              <span className="seg-badge">{requests.length}</span>
-            )}
+            {requests.length > 0 && <span className="seg-badge">{requests.length}</span>}
           </button>
         </div>
 
         {tab === "amigos" ? (
           <div className="friends">
-            <p className="friends-group__title">
-              Amigos ({friends.length})
-            </p>
-            {friends.length === 0 && (
+            <div className="code-join color-subpanel">
+              <input
+                aria-label="Nickname del jugador"
+                placeholder="Añadir amigo por nickname…"
+                value={nick}
+                onChange={(e) => {
+                  setNick(e.target.value);
+                  setSentOk(false);
+                }}
+              />
+              <button
+                className="mini-btn mini-btn--send"
+                aria-label="Enviar solicitud"
+                disabled={nick.trim().length === 0 || sendMut.isPending}
+                onClick={() => sendMut.mutate()}
+              >
+                <SendIcon />
+              </button>
+            </div>
+            {sentOk && <p className="friend-info__status">Solicitud enviada.</p>}
+            {errText(sendMut.error) && <p className="form-error">{errText(sendMut.error)}</p>}
+
+            <p className="friends-group__title">Amigos ({friends.length})</p>
+            {friendsQuery.isLoading && (
+              <p className="friend-info__status">Cargando amigos…</p>
+            )}
+            {friendsQuery.isError && (
+              <p className="form-error">No se pudieron cargar tus amigos.</p>
+            )}
+            {!friendsQuery.isLoading && friends.length === 0 && (
               <p className="friend-info__status">Aún no tienes amigos.</p>
             )}
             {friends.map((f) => (
@@ -72,30 +129,53 @@ export function FriendsPanel() {
                   <p className="friend-info__name">{f.nickname}</p>
                   <p className="friend-info__status">Desconectado</p>
                 </div>
-                <button className="mini-btn">Invitar</button>
               </div>
             ))}
           </div>
         ) : (
           <div className="friends">
-            <p className="friends-group__title">
-              Solicitudes ({requests.length})
-            </p>
-            {requests.length === 0 && (
+            <p className="friends-group__title">Solicitudes ({requests.length})</p>
+            {requestsQuery.isLoading && (
+              <p className="friend-info__status">Cargando…</p>
+            )}
+            {!requestsQuery.isLoading && requests.length === 0 && (
               <p className="friend-info__status">Sin solicitudes pendientes.</p>
             )}
-            {requests.map((r) => (
-              <div key={r.friend_request_id} className="friend-row">
-                <span className="friend-av">
-                  {r.from_nickname.charAt(0).toUpperCase()}
-                </span>
-                <div className="friend-info">
-                  <p className="friend-info__name">{r.from_nickname}</p>
-                  <p className="friend-info__status">Quiere ser tu amigo</p>
+            {(errText(acceptMut.error) || errText(rejectMut.error)) && (
+              <p className="form-error">
+                {errText(acceptMut.error) || errText(rejectMut.error)}
+              </p>
+            )}
+            {requests.map((r) => {
+              const busy =
+                (acceptMut.isPending && acceptMut.variables === r.friend_request_id) ||
+                (rejectMut.isPending && rejectMut.variables === r.friend_request_id);
+              return (
+                <div key={r.friend_request_id} className="friend-row">
+                  <span className="friend-av">
+                    {r.from_nickname.charAt(0).toUpperCase()}
+                  </span>
+                  <div className="friend-info">
+                    <p className="friend-info__name">{r.from_nickname}</p>
+                    <p className="friend-info__status">Quiere ser tu amigo</p>
+                  </div>
+                  <button
+                    className="mini-btn"
+                    disabled={busy}
+                    onClick={() => acceptMut.mutate(r.friend_request_id)}
+                  >
+                    Aceptar
+                  </button>
+                  <button
+                    className="mini-btn"
+                    disabled={busy}
+                    onClick={() => rejectMut.mutate(r.friend_request_id)}
+                  >
+                    Rechazar
+                  </button>
                 </div>
-                <button className="mini-btn">Aceptar</button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -112,8 +192,8 @@ export function FriendsPanel() {
             </div>
           </div>
           <div className="chat-input">
-            <input placeholder="Escribe un mensaje…" />
-            <button className="mini-btn mini-btn--send" aria-label="Enviar">
+            <input aria-label="Mensaje de chat" placeholder="Chat (próximamente)…" disabled />
+            <button className="mini-btn mini-btn--send" aria-label="Enviar" disabled>
               <SendIcon />
             </button>
           </div>

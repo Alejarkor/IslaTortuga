@@ -1,2 +1,10 @@
-Para lanzar la seed:
+Para lanzar la seed de datos de ejemplo:
 Powershell desde Server/Game_Database -> Get-Content .\seeds\001_dev_data.sql | docker compose exec -T postgres psql -U admin -d islaT_DB
+
+Para restaurar el REGISTRO DE ASSETS (personaje, pelos, UI, login) en la BD:
+1) tablas de assets (si no existen):  Get-Content -Raw .\migrations\003_create_asset_core.sql | docker compose exec -T postgres psql -U admin -d islaT_DB
+2) seed de assets:                    Get-Content -Raw .\seeds\002_assets_seed.sql | docker compose exec -T postgres psql -U admin -d islaT_DB
+
+El seed 002_assets_seed.sql se generó desde los sidecars .asset.json + los binarios
+de Server/GameAssets/server_assets. Es idempotente (se puede re-ejecutar). Si añades o
+cambias assets, vuelve a generarlo o usa la herramienta Tools/AssetEditor.

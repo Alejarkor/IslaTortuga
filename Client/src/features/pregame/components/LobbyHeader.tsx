@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/features/auth/useAuth";
+import { fetchStats } from "@/api/profile.api";
 import {
   MailIcon,
   BellIcon,
@@ -10,20 +12,25 @@ import {
 import { BrandEmblem } from "@/skin/BrandEmblem";
 
 /**
- * Cabecera del lobby: identidad + nivel/XP, logo central (imagen) y acciones.
+ * Cabecera del lobby: identidad + estadísticas reales (partidas/victorias),
+ * logo central y acciones. Sin datos inventados de economía/nivel.
  */
 export function LobbyHeader() {
   const navigate = useNavigate();
   const { session, logout } = useAuth();
 
+  const statsQuery = useQuery({
+    queryKey: ["stats"],
+    queryFn: ({ signal }) => fetchStats(signal)
+  });
+  const stats = statsQuery.data?.stats;
+
   const nickname = session?.nickname ?? "Pirata";
   const initial = nickname.charAt(0).toUpperCase();
 
-  const level = 12;
-  const xp = 2350;
-  const xpMax = 5000;
-  const coins = 12450;
-  const gems = 845;
+  const played = stats?.games_played ?? 0;
+  const won = stats?.games_won ?? 0;
+  const winRate = played > 0 ? Math.round((won / played) * 100) : 0;
 
   const onLogout = async () => {
     await logout();
@@ -36,17 +43,14 @@ export function LobbyHeader() {
         <div className="lobby-avatar">{initial}</div>
         <div>
           <p className="lobby-id__name">{nickname}</p>
-          <p className="lobby-id__level">Corsario Nivel {level}</p>
+          <p className="lobby-id__level">
+            {played} partidas · {won} victorias
+          </p>
           <div className="xp-bar">
             <div className="xp-bar__track">
-              <div
-                className="xp-bar__fill"
-                style={{ width: `${Math.round((xp / xpMax) * 100)}%` }}
-              />
+              <div className="xp-bar__fill" style={{ width: `${winRate}%` }} />
             </div>
-            <span className="xp-bar__text">
-              {xp.toLocaleString("es")} / {xpMax.toLocaleString("es")}
-            </span>
+            <span className="xp-bar__text">{winRate}% victorias</span>
           </div>
         </div>
       </div>
@@ -56,14 +60,6 @@ export function LobbyHeader() {
       </div>
 
       <div className="lobby-actions">
-        <span className="currency">
-          <span className="currency__coin" />
-          {coins.toLocaleString("es")}
-        </span>
-        <span className="currency">
-          <span className="currency__gem" />
-          {gems.toLocaleString("es")}
-        </span>
         <button className="icon-btn" aria-label="Mensajes" title="Mensajes">
           <MailIcon />
         </button>

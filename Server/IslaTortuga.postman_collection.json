@@ -96,10 +96,10 @@
       ]
     },
     {
-      "name": "1. Auth",
+      "name": "1. Auth (identidad reutilizable)",
       "item": [
         {
-          "name": "Register · Jugador 1 (host)",
+          "name": "Registrar P1 (una sola vez)",
           "request": {
             "method": "POST",
             "header": [
@@ -121,45 +121,32 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{p1_username}}\",\n  \"email\": \"{{p1_email}}\",\n  \"password\": \"secret123\",\n  \"nickname\": \"{{p1_nickname}}\"\n}",
+              "raw": "{\n  \"username\": \"jugador1\",\n  \"email\": \"jugador1@test.com\",\n  \"password\": \"secret123\",\n  \"nickname\": \"Jugador1\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            },
-            "description": "Crea P1. Guarda p1_playerId. Usa username/email aleatorios para no colisionar."
+            }
           },
           "response": [],
           "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const s=Date.now();",
-                  "pm.collectionVariables.set(\"p1_username\",\"ana_\"+s);",
-                  "pm.collectionVariables.set(\"p1_email\",\"ana_\"+s+\"@test.com\");",
-                  "pm.collectionVariables.set(\"p1_nickname\",\"Ana\"+s);"
-                ]
-              }
-            },
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"status 201\", function(){ pm.response.to.have.status(201); });",
-                  "const j=pm.response.json();",
-                  "pm.collectionVariables.set(\"p1_playerId\", j.profile.player_id);",
-                  "pm.collectionVariables.set(\"p1_userId\", j.user.user_id);"
+                  "pm.test(\"registrado (201) o ya existe (409)\", function(){ pm.expect([201,409]).to.include(pm.response.code); });",
+                  "if (pm.response.code===201){ var j=pm.response.json();",
+                  "  pm.collectionVariables.set(\"p1_playerId\", j.profile.player_id);",
+                  "  pm.collectionVariables.set(\"p1_nickname\", j.profile.nickname); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Register · Jugador 2",
+          "name": "Registrar P2 (una sola vez)",
           "request": {
             "method": "POST",
             "header": [
@@ -181,7 +168,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{p2_username}}\",\n  \"email\": \"{{p2_email}}\",\n  \"password\": \"secret123\",\n  \"nickname\": \"{{p2_nickname}}\"\n}",
+              "raw": "{\n  \"username\": \"jugador2\",\n  \"email\": \"jugador2@test.com\",\n  \"password\": \"secret123\",\n  \"nickname\": \"Jugador2\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -192,33 +179,21 @@
           "response": [],
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const s=Date.now();",
-                  "pm.collectionVariables.set(\"p2_username\",\"beto_\"+s);",
-                  "pm.collectionVariables.set(\"p2_email\",\"beto_\"+s+\"@test.com\");",
-                  "pm.collectionVariables.set(\"p2_nickname\",\"Beto\"+s);"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"status 201\", function(){ pm.response.to.have.status(201); });",
-                  "const j=pm.response.json();",
-                  "pm.collectionVariables.set(\"p2_playerId\", j.profile.player_id);",
-                  "pm.collectionVariables.set(\"p2_userId\", j.user.user_id);"
+                  "pm.test(\"registrado (201) o ya existe (409)\", function(){ pm.expect([201,409]).to.include(pm.response.code); });",
+                  "if (pm.response.code===201){ var j=pm.response.json();",
+                  "  pm.collectionVariables.set(\"p2_playerId\", j.profile.player_id);",
+                  "  pm.collectionVariables.set(\"p2_nickname\", j.profile.nickname); }"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Login · Jugador 1",
+          "name": "Login P1 (cada sesión)",
           "request": {
             "method": "POST",
             "header": [
@@ -240,7 +215,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"usernameOrEmail\": \"{{p1_username}}\",\n  \"password\": \"secret123\"\n}",
+              "raw": "{\n  \"usernameOrEmail\": \"jugador1\",\n  \"password\": \"secret123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -255,7 +230,57 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });",
+                  "var j=pm.response.json();",
+                  "pm.collectionVariables.set(\"p1_playerId\", j.profile.player_id);",
+                  "pm.collectionVariables.set(\"p1_nickname\", j.profile.nickname);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login P2 (cada sesión)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/auth/login",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"jugador2\",\n  \"password\": \"secret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });",
+                  "var j=pm.response.json();",
+                  "pm.collectionVariables.set(\"p2_playerId\", j.profile.player_id);",
+                  "pm.collectionVariables.set(\"p2_nickname\", j.profile.nickname);"
                 ]
               }
             }
