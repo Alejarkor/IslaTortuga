@@ -34,6 +34,13 @@ export class NotMemberError extends RoomError {
   }
 }
 
+export class NotHostError extends RoomError {
+  constructor() {
+    super("Solo el creador de la sala puede iniciar la partida", 403);
+    this.name = "NotHostError";
+  }
+}
+
 export class CannotLaunchError extends RoomError {
   constructor(reason: string) {
     super(`No se puede lanzar la partida: ${reason}`, 409);

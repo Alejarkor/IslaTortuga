@@ -76,5 +76,32 @@ namespace IslaTortuga.GameServer.Tests
             var orch = Build(2, out _);
             Assert.IsFalse(orch.StopMatch("match_no_existe"));
         }
+
+        [Test]
+        public void ReapExpiredOlderThan_DetieneLasPartidasViejas()
+        {
+            var orch = Build(4, out var capacity);
+            var match = orch.CreateMatch(SampleConfig());
+            Assert.AreEqual(1, orch.ActiveMatchCount);
+
+            var reaped = orch.ReapExpiredOlderThan(System.TimeSpan.Zero); // edad >= 0 -> expira
+
+            Assert.AreEqual(1, reaped);
+            Assert.AreEqual(0, orch.ActiveMatchCount);
+            Assert.AreEqual(0, capacity.ActiveMatches);
+            Assert.IsNull(orch.GetMatch(match.MatchId));
+        }
+
+        [Test]
+        public void ReapExpiredOlderThan_NoTocaLasNuevas()
+        {
+            var orch = Build(4, out _);
+            orch.CreateMatch(SampleConfig());
+
+            var reaped = orch.ReapExpiredOlderThan(System.TimeSpan.FromHours(1));
+
+            Assert.AreEqual(0, reaped);
+            Assert.AreEqual(1, orch.ActiveMatchCount);
+        }
     }
 }

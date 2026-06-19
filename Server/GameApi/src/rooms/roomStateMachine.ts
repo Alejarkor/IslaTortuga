@@ -9,14 +9,14 @@ export class RoomStateError extends Error {
 }
 
 /**
- * Transiciones permitidas. El camino feliz es
- * waiting -> ready_check -> starting -> in_game -> finished. Desde los estados de
- * pre-juego se puede cancelar. Los estados finished y cancelled son terminales.
+ * Transiciones permitidas. El creador puede lanzar desde waiting (o ready_check),
+ * sin requerir que todos estén "ready". El camino es
+ * waiting/ready_check -> starting -> in_game -> finished, con cancelación en pre-juego.
  */
 const TRANSITIONS: Record<RoomState, RoomState[]> = {
-  waiting: ["ready_check", "cancelled"],
+  waiting: ["ready_check", "starting", "cancelled"],
   ready_check: ["waiting", "starting", "cancelled"],
-  starting: ["in_game", "ready_check", "cancelled"],
+  starting: ["in_game", "ready_check", "waiting", "cancelled"],
   in_game: ["finished"],
   finished: [],
   cancelled: []
@@ -27,7 +27,6 @@ export class RoomStateMachine {
     return TRANSITIONS[from]?.includes(to) ?? false;
   }
 
-  /** Lanza RoomStateError si la transición no está permitida. */
   static assertTransition(from: RoomState, to: RoomState): void {
     if (!RoomStateMachine.canTransition(from, to)) {
       throw new RoomStateError(from, to);

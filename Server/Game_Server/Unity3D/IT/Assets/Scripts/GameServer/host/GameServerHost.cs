@@ -4,13 +4,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using IslaTortuga.GameServer.Control;
 using IslaTortuga.GameServer.Match;
+using IslaTortuga.GameServer.Gateway;
 
 namespace IslaTortuga.GameServer.Host
 {
     /// <summary>
     /// Cimiento del Game Server. Compone y posee las piezas de infraestructura del
-    /// host (config, logger, métricas, capacidad, orquestador de partidas y plano de
-    /// control) y gobierna su ciclo de vida: arranque ordenado y apagado limpio.
+    /// host (config, logger, métricas, capacidad, orquestador, plano de control y, a
+    /// partir de la Fase 2, el PlayerGateway realtime) y gobierna su ciclo de vida:
+    /// arranque ordenado y apagado limpio.
     ///
     /// No depende de UnityEngine: el MonoBehaviour GameServerBootstrap es solo un
     /// envoltorio fino que lo arranca dentro de Unity.
@@ -31,6 +33,9 @@ namespace IslaTortuga.GameServer.Host
         public CapacityManager Capacity { get; }
         public MatchOrchestrator Matches { get; }
         public ControlApi ControlApi { get; }
+        public PlayerSessionManager Sessions { get; }
+        public ITicketValidator TicketValidator { get; }
+        public PlayerGateway Gateway { get; }
 
         public bool IsRunning
         {
@@ -42,21 +47,20 @@ namespace IslaTortuga.GameServer.Host
         public GameServerHost(
             ServerConfig config,
             IServerLogger logger = null,
-            MetricsRegistry metrics = null)
+            MetricsRegistry metrics = null,
+            ITicketValidator ticketValidator = null)
         {
             Config = config ?? throw new ArgumentNullException(nameof(config));
             Logger = logger ?? new ConsoleServerLogger();
             Metrics = metrics ?? new MetricsRegistry();
             Capacity = new CapacityManager(Config, Metrics);
-            Matches = new MatchOrchestrator(Capacity, Logger, Metrics);
+            Matches = new MatchOrchestrator(Capacity, Logger, Metrics, Config.TickRate, Config.MatchMaxSeconds);
             ControlApi = new ControlApi(Config, Capacity, Logger, () => UptimeSeconds, Matches);
+            Sessions = new PlayerSessionManager();
+            TicketValidator = ticketValidator ?? new HttpTicketValidator(Config.GameApiUrl, Logger);
+            Gateway = new PlayerGateway(Config, Matches, TicketValidator, Sessions, Logger, Metrics);
         }
 
-        /// <summary>
-        /// Arranca el host: registra el banner de arranque, inicia la ControlApi y
-        /// arranca el reloj de uptime. Idempotente: llamarlo dos veces no hace nada
-        /// la segunda vez.
-        /// </summary>
         public Task StartAsync(CancellationToken cancellationToken = default)
         {
             lock (_gate)
@@ -76,16 +80,12 @@ namespace IslaTortuga.GameServer.Host
             Logger.Info(Config.ToString());
 
             ControlApi.Start();
+            Gateway.Start();
 
-            Logger.Info("Game Server listo. Esperando órdenes de control.");
+            Logger.Info("Game Server listo. Control y gateway en marcha.");
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// Apaga el host de forma ordenada: detiene la ControlApi (liberando el
-        /// puerto), para el reloj de uptime y deja todo cerrado. Idempotente y seguro
-        /// de llamar desde un manejador de señal (SIGTERM) o desde OnApplicationQuit.
-        /// </summary>
         public async Task ShutdownGracefullyAsync()
         {
             lock (_gate)
@@ -98,6 +98,15 @@ namespace IslaTortuga.GameServer.Host
             }
 
             Logger.Info("== Game Server apagándose (shutdown ordenado) ==");
+
+            try
+            {
+                await Gateway.StopAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Error al detener el PlayerGateway durante el apagado.", ex);
+            }
 
             try
             {

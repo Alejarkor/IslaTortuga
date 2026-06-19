@@ -5,6 +5,7 @@ import { TicketService } from "../tickets/ticketService";
 import {
   AlreadyMemberError,
   CannotLaunchError,
+  NotHostError,
   NotMemberError,
   RoomFullError,
   RoomNotFoundError
@@ -41,9 +42,9 @@ export interface RoomServiceOptions {
 }
 
 /**
- * Orquesta todo el ciclo de una sala: creación, unión, ready y lanzamiento de
- * partida. En el lanzamiento coordina al Game Server (capacidad + create-match),
- * la emisión de tickets y el cambio de estado a in_game vía RoomSyncAdapter.
+ * Orquesta el ciclo de una sala. Regla de lanzamiento (decisión de diseño): el
+ * creador puede iniciar la partida cuando hay al menos `minPlayers` jugadores
+ * unidos; NO se requiere que estén "ready" (el ready es opcional/cosmético).
  */
 export class RoomService {
   private readonly minPlayers: number;
@@ -57,7 +58,7 @@ export class RoomService {
     private readonly sync: RoomSyncAdapter,
     options: RoomServiceOptions = {}
   ) {
-    this.minPlayers = options.minPlayers ?? 1;
+    this.minPlayers = options.minPlayers ?? 3;
     this.defaultMaxPlayers = options.defaultMaxPlayers ?? 8;
     this.defaultMapId = options.defaultMapId ?? "beach_map_01";
   }
@@ -119,7 +120,6 @@ export class RoomService {
       joinedAt: new Date().toISOString()
     });
 
-    this.syncReadyState(room);
     room.updatedAt = new Date().toISOString();
     await this.rooms.save(room);
     return room;
@@ -139,55 +139,59 @@ export class RoomService {
       return null;
     }
 
-    // Si se fue el host, promociona al siguiente miembro a master/host.
     if (room.hostPlayerId === playerId) {
       const newHost = room.members[0];
       room.hostPlayerId = newHost.playerId;
       newHost.role = "master";
     }
 
-    this.syncReadyState(room);
     room.updatedAt = new Date().toISOString();
     await this.rooms.save(room);
     return room;
   }
 
+  /** Marca/desmarca "listo" (cosmético; no condiciona el lanzamiento). */
   async setReady(roomId: string, playerId: string, ready: boolean): Promise<Room> {
     const room = await this.getRoom(roomId);
     const member = room.members.find((m) => m.playerId === playerId);
     if (!member) {
       throw new NotMemberError();
     }
-
     member.isReady = ready;
-    this.syncReadyState(room);
     room.updatedAt = new Date().toISOString();
     await this.rooms.save(room);
     return room;
   }
 
-  /** True solo si todos están ready, hay mínimo de jugadores y hay capacidad. */
-  canLaunch(room: Room, hasCapacity: boolean): boolean {
+  /** True si quien pide es el creador, hay mínimo de jugadores y hay capacidad. */
+  canLaunch(room: Room, hasCapacity: boolean, requesterId: string): boolean {
     return (
-      room.state === "ready_check" &&
+      room.hostPlayerId === requesterId &&
       room.members.length >= this.minPlayers &&
-      room.members.every((m) => m.isReady) &&
-      hasCapacity
+      hasCapacity &&
+      (room.state === "waiting" || room.state === "ready_check")
     );
   }
 
-  async launch(roomId: string): Promise<LaunchResult> {
+  /** Lanza la partida. Solo el creador, con al menos minPlayers jugadores unidos. */
+  async launch(roomId: string, requesterId: string): Promise<LaunchResult> {
     const room = await this.getRoom(roomId);
 
+    if (room.hostPlayerId !== requesterId) {
+      throw new NotHostError();
+    }
+
     const capacity = await this.control.getCapacity();
-    if (!this.canLaunch(room, capacity.canAcceptMatch)) {
-      const reason = !capacity.canAcceptMatch
-        ? "el Game Server no tiene capacidad"
-        : "no todos los jugadores están listos";
+    if (!this.canLaunch(room, capacity.canAcceptMatch, requesterId)) {
+      const reason =
+        room.members.length < this.minPlayers
+          ? `hacen falta al menos ${this.minPlayers} jugadores (hay ${room.members.length})`
+          : !capacity.canAcceptMatch
+            ? "el Game Server no tiene capacidad"
+            : "la sala no se puede lanzar en su estado actual";
       throw new CannotLaunchError(reason);
     }
 
-    // ready_check -> starting (intención de lanzar, aún reversible).
     RoomStateMachine.assertTransition(room.state, "starting");
     room.state = "starting";
     room.updatedAt = new Date().toISOString();
@@ -197,8 +201,7 @@ export class RoomService {
     try {
       created = await this.control.createMatch(matchConfigFromRoom(room));
     } catch (err) {
-      // Falló la creación: revertimos a ready_check para poder reintentar.
-      room.state = "ready_check";
+      room.state = "waiting";
       room.updatedAt = new Date().toISOString();
       await this.rooms.save(room);
       throw err;
@@ -219,56 +222,25 @@ export class RoomService {
     };
   }
 
-  /**
-   * Lista las salas a las que un jugador podría unirse: públicas, en pre-juego
-   * (waiting/ready_check) y con hueco libre. Las salas caducadas (TTL) se ignoran.
-   */
   async listJoinableRooms(): Promise<Room[]> {
     const ids = await this.rooms.listIds();
     const result: Room[] = [];
     for (const id of ids) {
       const room = await this.rooms.get(id);
-      if (!room) {
-        continue;
-      }
-      if (room.isPrivate) {
-        continue;
-      }
-      if (room.state !== "waiting" && room.state !== "ready_check") {
-        continue;
-      }
-      if (room.members.length >= room.maxPlayers) {
-        continue;
-      }
+      if (!room) continue;
+      if (room.isPrivate) continue;
+      if (room.state !== "waiting" && room.state !== "ready_check") continue;
+      if (room.members.length >= room.maxPlayers) continue;
       result.push(room);
     }
     return result;
   }
 
-  /** Une a un jugador a una sala localizada por su código. */
   async joinByCode(code: string, input: JoinRoomInput): Promise<Room> {
     const room = await this.rooms.getByCode(code);
     if (!room) {
       throw new RoomNotFoundError();
     }
     return this.joinRoom(room.roomId, input);
-  }
-
-  /**
-   * Sincroniza el estado de pre-juego (waiting <-> ready_check) según si todos los
-   * miembros están listos. No toca estados que no sean de pre-juego.
-   */
-  private syncReadyState(room: Room): void {
-    if (room.state !== "waiting" && room.state !== "ready_check") {
-      return;
-    }
-
-    const allReady =
-      room.members.length >= this.minPlayers && room.members.every((m) => m.isReady);
-    const target = allReady ? "ready_check" : "waiting";
-
-    if (target !== room.state && RoomStateMachine.canTransition(room.state, target)) {
-      room.state = target;
-    }
   }
 }

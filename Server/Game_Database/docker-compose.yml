@@ -33,6 +33,17 @@ services:
     volumes:
       - redis_data:/data
 
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: islaT_redis_commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "${REDIS_COMMANDER_PORT}:8081"
+    depends_on:
+      - redis
+
   game-api:
     build: ../GameApi
     container_name: islaT_game_api
@@ -49,6 +60,7 @@ services:
       REDIS_PORT: 6379
       GAME_SERVER_CONTROL_URL: ${GAME_SERVER_CONTROL_URL}
       GS_CONTROL_TOKEN: ${GS_CONTROL_TOKEN}
+      ROOM_MIN_PLAYERS: ${ROOM_MIN_PLAYERS}
     ports:
       - "${GAME_API_PORT}:${GAME_API_PORT}"
     depends_on:

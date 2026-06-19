@@ -468,7 +468,7 @@ app.post(
   async (req: AuthenticatedRequest, res) => {
     const r = await forwardJson(
       `${gameApiUrl}/internal/rooms/${req.params.roomId}/launch`,
-      { method: "POST" }
+      { method: "POST", body: { playerId: req.session!.playerId } }
     );
     return res.status(r.status).json(r.data);
   }

@@ -285,6 +285,100 @@
               }
             }
           ]
+        },
+        {
+          "name": "Registrar P3 (una sola vez)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/auth/register",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"jugador3\",\n  \"email\": \"jugador3@test.com\",\n  \"password\": \"secret123\",\n  \"nickname\": \"Jugador3\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"registrado (201) o ya existe (409)\", function(){ pm.expect([201,409]).to.include(pm.response.code); });",
+                  "if (pm.response.code===201){ var j=pm.response.json();",
+                  "  pm.collectionVariables.set(\"p3_playerId\", j.profile.player_id);",
+                  "  pm.collectionVariables.set(\"p3_nickname\", j.profile.nickname); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login P3 (cada sesión)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gameApiUrl}}/internal/auth/login",
+              "host": [
+                "{{gameApiUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"jugador3\",\n  \"password\": \"secret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });",
+                  "var j=pm.response.json();",
+                  "pm.collectionVariables.set(\"p3_playerId\", j.profile.player_id);",
+                  "pm.collectionVariables.set(\"p3_nickname\", j.profile.nickname);"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -610,7 +704,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"hostPlayerId\": \"{{p1_playerId}}\",\n  \"nickname\": \"{{p1_nickname}}\",\n  \"maxPlayers\": 4,\n  \"mapId\": \"beach_map_01\"\n}",
+              "raw": "{\n  \"hostPlayerId\": \"{{p1_playerId}}\",\n  \"nickname\": \"{{p1_nickname}}\",\n  \"maxPlayers\": 8,\n  \"mapId\": \"beach_map_01\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -626,7 +720,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status 201\", function(){ pm.response.to.have.status(201); });",
-                  "const j=pm.response.json();",
+                  "var j=pm.response.json();",
                   "pm.collectionVariables.set(\"roomId\", j.room.roomId);",
                   "pm.collectionVariables.set(\"roomCode\", j.room.code);"
                 ]
@@ -665,7 +759,7 @@
           ]
         },
         {
-          "name": "3) Unirse (P2)",
+          "name": "3) Unirse P2",
           "request": {
             "method": "POST",
             "header": [
@@ -710,7 +804,7 @@
           ]
         },
         {
-          "name": "4) Ready P1",
+          "name": "4) Unirse P3",
           "request": {
             "method": "POST",
             "header": [
@@ -720,7 +814,7 @@
               }
             ],
             "url": {
-              "raw": "{{gameApiUrl}}/internal/rooms/{{roomId}}/ready",
+              "raw": "{{gameApiUrl}}/internal/rooms/{{roomId}}/join",
               "host": [
                 "{{gameApiUrl}}"
               ],
@@ -728,57 +822,12 @@
                 "internal",
                 "rooms",
                 "{{roomId}}",
-                "ready"
+                "join"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"playerId\": \"{{p1_playerId}}\",\n  \"ready\": true\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "5) Ready P2",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{gameApiUrl}}/internal/rooms/{{roomId}}/ready",
-              "host": [
-                "{{gameApiUrl}}"
-              ],
-              "path": [
-                "internal",
-                "rooms",
-                "{{roomId}}",
-                "ready"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"playerId\": \"{{p2_playerId}}\",\n  \"ready\": true\n}",
+              "raw": "{\n  \"playerId\": \"{{p3_playerId}}\",\n  \"nickname\": \"{{p3_nickname}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -794,18 +843,23 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });",
-                  "const j=pm.response.json();",
-                  "pm.test(\"ready_check\", ()=> pm.expect(j.room.state).to.eql(\"ready_check\"));"
+                  "var j=pm.response.json();",
+                  "pm.test(\"3 miembros\", ()=> pm.expect(j.room.members.length).to.eql(3));"
                 ]
               }
             }
           ]
         },
         {
-          "name": "6) Lanzar partida",
+          "name": "5) Lanzar (creador P1)",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{gameApiUrl}}/internal/rooms/{{roomId}}/launch",
               "host": [
@@ -818,7 +872,15 @@
                 "launch"
               ]
             },
-            "description": "Requiere Game Server (Unity) levantado: el GameApi llama a create-match."
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": \"{{p1_playerId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": [],
           "event": [
@@ -828,12 +890,13 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"status 200\", function(){ pm.response.to.have.status(200); });",
-                  "const j=pm.response.json();",
+                  "var j=pm.response.json();",
                   "pm.collectionVariables.set(\"matchId\", j.matchId);",
                   "pm.collectionVariables.set(\"gatewayPort\", j.gateway.port);",
                   "if(j.tickets&&j.tickets[0]) pm.collectionVariables.set(\"ticket1\", j.tickets[0].ticketId);",
                   "if(j.tickets&&j.tickets[1]) pm.collectionVariables.set(\"ticket2\", j.tickets[1].ticketId);",
-                  "pm.test(\"un ticket por jugador\", ()=> pm.expect(j.tickets.length).to.eql(2));",
+                  "if(j.tickets&&j.tickets[2]) pm.collectionVariables.set(\"ticket3\", j.tickets[2].ticketId);",
+                  "pm.test(\"un ticket por jugador (3)\", ()=> pm.expect(j.tickets.length).to.eql(3));",
                   "pm.test(\"sala in_game\", ()=> pm.expect(j.room.state).to.eql(\"in_game\"));"
                 ]
               }
@@ -841,7 +904,7 @@
           ]
         },
         {
-          "name": "7) Ver sala (in_game)",
+          "name": "6) Ver sala (in_game)",
           "request": {
             "method": "GET",
             "header": [],
@@ -871,7 +934,7 @@
           ]
         },
         {
-          "name": "8) Salir (P2)",
+          "name": "7) Salir P3",
           "request": {
             "method": "POST",
             "header": [
@@ -894,7 +957,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"playerId\": \"{{p2_playerId}}\"\n}",
+              "raw": "{\n  \"playerId\": \"{{p3_playerId}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1202,6 +1265,18 @@
     },
     {
       "key": "assetFileId",
+      "value": ""
+    },
+    {
+      "key": "p3_playerId",
+      "value": ""
+    },
+    {
+      "key": "p3_nickname",
+      "value": ""
+    },
+    {
+      "key": "ticket3",
       "value": ""
     }
   ]

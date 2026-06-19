@@ -1711,8 +1711,23 @@ const controlClient = new HttpGameServerControlClient({
   baseUrl: process.env.GAME_SERVER_CONTROL_URL ?? "http://localhost:8080",
   token: process.env.GS_CONTROL_TOKEN
 });
-const roomServices = buildRoomServices(getRedis(), controlClient);
+const roomServices = buildRoomServices(getRedis(), controlClient, {
+  minPlayers: Number(process.env.ROOM_MIN_PLAYERS ?? 3)
+});
 app.use(createRoomsRouter(roomServices));
+
+// --- Consumo de tickets (Fase 2): lo llama el Game Server al validar la conexión ---
+app.post("/internal/tickets/consume", async (req, res) => {
+  const ticketId = req.body?.ticketId;
+  if (!ticketId) {
+    return res.status(400).json({ ok: false, error: "ticketId requerido" });
+  }
+  const ticket = await roomServices.tickets.consume(ticketId);
+  if (!ticket) {
+    return res.status(404).json({ ok: false, error: "ticket inválido o ya consumido" });
+  }
+  return res.json({ ok: true, ticket });
+});
 
 app.listen(port, () => {
   console.log(`GameApi listening on port ${port}`);

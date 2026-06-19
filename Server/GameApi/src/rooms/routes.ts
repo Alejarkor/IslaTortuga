@@ -9,7 +9,7 @@ import { TicketRepository } from "../tickets/ticketRepository";
 import { TicketService } from "../tickets/ticketService";
 import { RoomError } from "./errors";
 import { RoomRepository } from "./roomRepository";
-import { RoomService } from "./roomService";
+import { RoomService, RoomServiceOptions } from "./roomService";
 import { RoomSyncAdapter } from "./roomSyncAdapter";
 
 export interface RoomServices {
@@ -21,13 +21,14 @@ export interface RoomServices {
 /** Construye el grafo de objetos de salas/tickets a partir de Redis y el control client. */
 export function buildRoomServices(
   redis: RedisLike,
-  control: GameServerControlClient
+  control: GameServerControlClient,
+  options: RoomServiceOptions = {}
 ): RoomServices {
   const rooms = new RoomRepository(redis);
   const ticketRepo = new TicketRepository(redis);
   const tickets = new TicketService(ticketRepo);
   const sync = new RoomSyncAdapter(rooms);
-  const service = new RoomService(rooms, tickets, control, sync);
+  const service = new RoomService(rooms, tickets, control, sync, options);
   return { rooms, tickets, service };
 }
 
@@ -139,7 +140,12 @@ export function createRoomsRouter(services: RoomServices): Router {
   router.post(
     "/internal/rooms/:roomId/launch",
     handle(async (req, res) => {
-      const result = await service.launch(req.params.roomId);
+      const { playerId } = req.body ?? {};
+      if (!playerId) {
+        res.status(400).json({ ok: false, error: "playerId (creador) es obligatorio" });
+        return;
+      }
+      const result = await service.launch(req.params.roomId, playerId);
       res.json({
         ok: true,
         matchId: result.matchId,
